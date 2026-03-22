@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 'use client'
 
 import Image from "next/image"
@@ -71,6 +72,8 @@ export function MainDashboard(props: MapDashboardProps){
         </div>
 
 =======
+=======
+>>>>>>> f4230e7 (starting dashboard for map)
 import Image from "next/image"
 
 export function MapDashboard(props:object){
@@ -91,6 +94,9 @@ export function MapDashboard(props:object){
                 {props.rating}
             </p>
         </section>
+<<<<<<< HEAD
 >>>>>>> e1a44b0 (starting dashboard for map)
+=======
+>>>>>>> f4230e7 (starting dashboard for map)
     )
 }

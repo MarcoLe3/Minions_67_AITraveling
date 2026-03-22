@@ -1,9 +1,12 @@
 import { Slider } from "@/components/ui/slider"
 <<<<<<< HEAD
+<<<<<<< HEAD
 import Box from '@mui/material/Box';
 import SliderMUI from '@mui/material/Slider'; 
 =======
 >>>>>>> e1a44b0 (starting dashboard for map)
+=======
+>>>>>>> f4230e7 (starting dashboard for map)
 
 export function SliderRange(low: number, high: number) {
     
@@ -16,6 +19,7 @@ export function SliderRange(low: number, high: number) {
         />
     )
 }
+<<<<<<< HEAD
 <<<<<<< HEAD
 
 function valuetext(value: number) {
@@ -40,3 +44,5 @@ export function DiscreteSliderSteps() {
 }
 =======
 >>>>>>> e1a44b0 (starting dashboard for map)
+=======
+>>>>>>> f4230e7 (starting dashboard for map)
