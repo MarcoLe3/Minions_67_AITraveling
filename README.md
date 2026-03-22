@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # AI Travel Itinerary Planner 🌍✈️ - CSC 603 [01] Gen AI 
 - Team 6
 - Marco Lee (Team Lead)
@@ -89,7 +88,7 @@ For our capstone, we devleoped an AI-powered travel planning application that ge
 Once the backend is running, you can explore the interactive API docs at:
 - Swagger UI: `http://localhost:8000/docs`
 - Redoc: `http://localhost:8000/redoc`
-=======
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
@@ -126,4 +125,3 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
->>>>>>> 729c3a3 (feat: initial commit)
