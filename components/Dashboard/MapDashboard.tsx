@@ -1,6 +1,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 97e0067 (might mess up everything)
 'use client'
@@ -78,6 +79,8 @@ export function MainDashboard(props: MapDashboardProps){
 =======
 =======
 >>>>>>> f4230e7 (starting dashboard for map)
+=======
+>>>>>>> e1a44b0 (starting dashboard for map)
 import Image from "next/image"
 
 export function MapDashboard(props:object){
@@ -99,10 +102,13 @@ export function MapDashboard(props:object){
             </p>
         </section>
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> e1a44b0 (starting dashboard for map)
 =======
 >>>>>>> f4230e7 (starting dashboard for map)
 =======
 >>>>>>> 97e0067 (might mess up everything)
+=======
+>>>>>>> e1a44b0 (starting dashboard for map)
     )
 }
