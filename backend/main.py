@@ -3,8 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 app = FastAPI(title="AI Travel Agent API", version="1.0.0")
+# Auto-generated interactive docs available at http://localhost:8000/docs when running
 
-# Allow requests from the Next.js frontend (adjust origins as needed)
+# allow the Next.js frontend to call this API during local development.
+# in production, replace "http://localhost:3000" with the deployed frontend URL.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -14,6 +16,8 @@ app.add_middleware(
 )
 
 
+# Pydantic models handle input validation automatically —
+# FastAPI will return a 422 error if the client sends wrong types or missing fields.
 class ItineraryRequest(BaseModel):
     origin: str
     destination: str
@@ -36,4 +40,5 @@ def generate_itinerary(request: ItineraryRequest):
     Accepts travel details and returns a generated itinerary.
     Placeholder response — AI integration comes next.
     """
+    # STEP 2: replace this with a call to generate_itinerary_with_hf()
     return ItineraryResponse(itinerary="Test itinerary")
