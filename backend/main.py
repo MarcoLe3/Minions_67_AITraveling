@@ -40,10 +40,22 @@ def generate_itinerary(request: ItineraryRequest):
     """
     Builds a travel prompt from the user's input and returns an AI-generated itinerary.
     """
+    # Step 4: Improved Prompt Engineering
+    # We use a system-style instruction to set the persona and enforce a strict output schema.
+    # This helps the LLM provide consistent, parseable, and professional responses.
     prompt = (
-        f"Create a {request.days}-day travel itinerary for a trip from {request.origin} "
-        f"to {request.destination} with a total budget of ${request.budget}. "
-        f"Include daily activities, recommended meals, and transport tips."
+        "You are an expert AI Travel Assistant. Create a highly detailed and structured "
+        f"travel itinerary for a trip from {request.origin} to {request.destination} "
+        f"for a duration of {request.days} days, with a total budget of ${request.budget}.\n\n"
+        "Please follow this exact format for each day:\n"
+        "Day [Number]:\n"
+        "- Activities: [List detailed activities]\n"
+        "- Estimated cost: [Specific amount for the day]\n\n"
+        "Finally, provide a 'Trip Summary' section at the end:\n"
+        "Trip Summary:\n"
+        "- Total estimated cost: [Sum of all daily costs]\n"
+        f"- Budget fit: [Yes/No, based on whether the total is within ${request.budget}]\n\n"
+        "Ensure the advice is practical and fits the specified budget."
     )
 
     try:
