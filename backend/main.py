@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from hf_client import generate_itinerary_with_hf
 
 app = FastAPI(title="AI Travel Agent API", version="1.0.0")
 # Auto-generated interactive docs available at http://localhost:8000/docs when running
@@ -37,8 +38,18 @@ def root():
 @app.post("/generate-itinerary", response_model=ItineraryResponse)
 def generate_itinerary(request: ItineraryRequest):
     """
-    Accepts travel details and returns a generated itinerary.
-    Placeholder response — AI integration comes next.
+    Builds a travel prompt from the user's input and returns an AI-generated itinerary.
     """
-    # STEP 2: replace this with a call to generate_itinerary_with_hf()
-    return ItineraryResponse(itinerary="Test itinerary")
+    prompt = (
+        f"Create a {request.days}-day travel itinerary for a trip from {request.origin} "
+        f"to {request.destination} with a total budget of ${request.budget}. "
+        f"Include daily activities, recommended meals, and transport tips."
+    )
+
+    try:
+        itinerary = generate_itinerary_with_hf(prompt)
+    except (ValueError, RuntimeError) as e:
+        # Surface API/config errors as a proper HTTP 500 instead of crashing
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return ItineraryResponse(itinerary=itinerary)
