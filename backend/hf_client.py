@@ -7,9 +7,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 HF_API_KEY = os.getenv("HF_API_KEY")
+# Using a model supported by HF Inference Providers (Serverless)
 HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"
-# HF migrated from api-inference.huggingface.co to this router endpoint in 2025.
-HF_API_URL = f"https://router.huggingface.co/hf-inference/models/{HF_MODEL}"
+# HF migrated to a new 'router' infrastructure in 2025. 
+# We use the Chat Completions API for better prompt handling and automatic provider routing.
+HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
 
 HEADERS = {"Authorization": f"Bearer {HF_API_KEY}"}
 
@@ -31,13 +33,16 @@ def generate_itinerary_with_hf(prompt: str) -> str:
     if not HF_API_KEY:
         raise ValueError("HF_API_KEY is not set. Please add it to your .env file.")
 
+    # The new Inference Router uses the Chat Completions format (messages)
+    # mirroring the OpenAI API structure.
     payload = {
-        "inputs": prompt,
-        "parameters": {
-            "max_new_tokens": 512,   # cap response length to avoid timeouts
-            "temperature": 0.7,      # 0 = deterministic, 1 = more creative
-            "return_full_text": False,  # only return the new text, not the prompt
-        },
+        "model": HF_MODEL,
+        "messages": [
+            {"role": "system", "content": "You are a professional travel agent."},
+            {"role": "user", "content": prompt}
+        ],
+        "max_tokens": 512,
+        "temperature": 0.7,
     }
 
     try:
@@ -57,14 +62,14 @@ def generate_itinerary_with_hf(prompt: str) -> str:
 
     data = response.json()
 
-    # HF returns a list of dicts: [{"generated_text": "..."}]
-    if isinstance(data, list) and len(data) > 0:
-        return data[0].get("generated_text", "").strip()
+    # The new Chat Completion response format nestles the text in choices -> message -> content.
+    if "choices" in data and len(data["choices"]) > 0:
+        return data["choices"][0]["message"]["content"].strip()
 
     raise RuntimeError(f"Unexpected response format from Hugging Face API: {data}")
 
 
-# ── Quick manual test ─────────────────────────────────────────────────────────
+#  Quick manual test 
 if __name__ == "__main__":
     test_prompt = (
         "Create a 3-day travel itinerary for a trip from New York to Paris "
