@@ -1,4 +1,8 @@
-# AI Travel Itinerary Planner 🌍✈️
+# AI Travel Itinerary Planner 🌍✈️ - CSC 603 [01] Gen AI 
+- Team 6
+- Marco Lee (Team Lead)
+- Ahmed Mriziq
+- Ben Nguyen
 
 Minions_67_AITraveling is an AI-powered travel planning application that generates personalized itineraries based on user preferences. By leveraging FastAPI and Next.js, it provides a seamless experience for users to plan their next adventure.
 
