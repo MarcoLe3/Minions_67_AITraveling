@@ -11,13 +11,13 @@ For our capstone, we devleoped an AI-powered travel planning application that ge
 - **AI-Generated Itineraries**: Uses Hugging Face's language models to create detailed travel plans.
 - **Smart Parsing**: Automatically extracts daily activities, costs, and summaries into a structured format.
 - **Responsive Web Interface**: A modern frontend built with Next.js and Tailwind CSS.
-- **Robust API**: A scalable backend powered by FastAPI.
 
 ## 🛠️ Tech Stack
 
 ### Backend
 - **Framework**: [FastAPI](https://fastapi.tiangolo.com/)
 - **AI Integration**: [Hugging Face Inference API](https://huggingface.co/inference-api)
+- - Hugging Face Model Used: (https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3)
 - **Validation**: [Pydantic](https://docs.pydantic.dev/)
 - **Environment Management**: `python-dotenv`
 
