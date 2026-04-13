@@ -4,7 +4,7 @@
 - Ahmed Mriziq
 - Ben Nguyen
 
-Minions_67_AITraveling is an AI-powered travel planning application that generates personalized itineraries based on user preferences. By leveraging FastAPI and Next.js, it provides a seamless experience for users to plan their next adventure.
+For our capstone, we devleoped an AI-powered travel planning application that generates personalized itineraries based on user preferences. By leveraging FastAPI and Next.js, it provides a seamless experience for users to plan their next adventure.
 
 ## 🚀 Key Features
 
