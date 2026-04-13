@@ -1,6 +1,7 @@
+from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from hf_client import generate_itinerary_with_hf
 
 app = FastAPI(title="AI Travel Agent API", version="1.0.0")
@@ -20,14 +21,16 @@ app.add_middleware(
 # Pydantic models handle input validation automatically —
 # FastAPI will return a 422 error if the client sends wrong types or missing fields.
 class ItineraryRequest(BaseModel):
-    origin: str
-    destination: str
-    budget: int
-    days: int
+    origin: str = Field(..., min_length=1, description="Starting location")
+    destination: str = Field(..., min_length=1, description="Target destination")
+    budget: int = Field(..., gt=0, description="Total budget must be greater than 0")
+    days: int = Field(..., gt=0, description="Number of days must be greater than 0")
 
 
 class ItineraryResponse(BaseModel):
     itinerary: str
+    success: bool
+    error: Optional[str] = None
 
 
 @app.get("/")
@@ -59,9 +62,14 @@ def generate_itinerary(request: ItineraryRequest):
     )
 
     try:
+        # Call our Hugging Face client to get the text generation result.
         itinerary = generate_itinerary_with_hf(prompt)
+        return ItineraryResponse(itinerary=itinerary, success=True)
     except (ValueError, RuntimeError) as e:
-        # Surface API/config errors as a proper HTTP 500 instead of crashing
-        raise HTTPException(status_code=500, detail=str(e))
-
-    return ItineraryResponse(itinerary=itinerary)
+        # If the API key is missing or the HF service returns an error,
+        # we return success=False along with the error message.
+        return ItineraryResponse(
+            itinerary="", 
+            success=False, 
+            error=str(e)
+        )

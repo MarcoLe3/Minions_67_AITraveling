@@ -40,12 +40,20 @@ def generate_itinerary_with_hf(prompt: str) -> str:
         },
     }
 
-    response = requests.post(HF_API_URL, headers=HEADERS, json=payload, timeout=30)
+    try:
+        response = requests.post(HF_API_URL, headers=HEADERS, json=payload, timeout=30)
+    except requests.exceptions.Timeout:
+        raise RuntimeError("The request to Hugging Face timed out. Please try again later.")
+    except requests.exceptions.RequestException as e:
+        raise RuntimeError(f"A network error occurred while connecting to Hugging Face: {str(e)}")
 
     if response.status_code != 200:
-        raise RuntimeError(
-            f"Hugging Face API error {response.status_code}: {response.text}"
-        )
+        # Provide a more descriptive error if we can parse it from the body
+        try:
+            err_msg = response.json().get("error", response.text)
+        except Exception:
+            err_msg = response.text
+        raise RuntimeError(f"Hugging Face API error ({response.status_code}): {err_msg}")
 
     data = response.json()
 
