@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -28,7 +28,9 @@ class ItineraryRequest(BaseModel):
 
 
 class ItineraryResponse(BaseModel):
-    itinerary: str
+    itinerary: str # Cleaned raw text
+    days: List[Dict[str, Any]] = [] # Structured day-by-day data
+    summary: Dict[str, Any] = {} # Structured summary data
     success: bool
     error: Optional[str] = None
 
@@ -63,8 +65,15 @@ def generate_itinerary(request: ItineraryRequest):
 
     try:
         # Call our Hugging Face client to get the text generation result.
-        itinerary = generate_itinerary_with_hf(prompt)
-        return ItineraryResponse(itinerary=itinerary, success=True)
+        # Now returns a dictionary with 'cleaned_text', 'days', and 'summary'.
+        result = generate_itinerary_with_hf(prompt)
+        
+        return ItineraryResponse(
+            itinerary=result["cleaned_text"],
+            days=result["days"],
+            summary=result["summary"],
+            success=True
+        )
     except (ValueError, RuntimeError) as e:
         # If the API key is missing or the HF service returns an error,
         # we return success=False along with the error message.
