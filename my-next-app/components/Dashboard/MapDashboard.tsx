@@ -5,21 +5,39 @@ import {DiscreteSliderSteps} from "@/components/Slider/slider.tsx"
 import {useState} from 'react'
 import BasicButtons from "@/components/Button/BasicButton.tsx"
 import RadioGroup from "@/components/Radio/RadioGroup.tsx"
+import usePost from "@/hooks/usePost.ts"
 
 interface MapDashboardProps {
     menuImage: string;
     settingImage: string;
 }
 
-function SettingDashboard(){
-    return (
-        <div className="p-4 w-[400px] bg-white flex justify-center flex-col">
-            <p>Budget</p>
-            <DiscreteSliderSteps/>
-            <RadioGroup/>
-            <BasicButtons/>
-        </div>
-    )
+function SettingDashboard() {
+  const [budget, setBudget] = useState(1)
+  const { sendDataToServer, loading, error } = usePost('http://localhost:8000/generate-itinerary')
+  const [result, setResult] = useState<{itinerary: string, success: boolean, error: string | null} | null>(null)
+
+  const handleApply = async () => {
+    const data = await sendDataToServer({
+      origin: "San Francisco",       // placeholder
+      destination: "San Jose",       // placeholder
+      budget,
+      days: 1,                       // placeholder
+    })
+    setResult(data)
+  }
+
+  return (
+    <div className="p-4 w-[400px] bg-white flex justify-center flex-col">
+      <p>Budget</p>
+      <DiscreteSliderSteps value={budget} onChange={setBudget} /> 
+      <RadioGroup />
+      <BasicButtons onClick={handleApply} />
+      {loading && <p>Generating...</p>}
+      {error && <p>Something went wrong.</p>}
+      {result && <pre>{result.itinerary}</pre>}
+    </div>
+  )
 }
 
 export function MainDashboard(props: MapDashboardProps){
