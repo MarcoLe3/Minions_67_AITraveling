@@ -14,15 +14,17 @@ interface MapDashboardProps {
 
 function SettingDashboard() {
   const [budget, setBudget] = useState(1)
+  const [days, setDays] = useState(1)  // add this
   const { sendDataToServer, loading, error } = usePost('http://localhost:8000/generate-itinerary')
   const [result, setResult] = useState<{itinerary: string, success: boolean, error: string | null} | null>(null)
 
   const handleApply = async () => {
+    if(!days) return;
     const data = await sendDataToServer({
       origin: "San Francisco",       // placeholder
       destination: "San Jose",       // placeholder
       budget,
-      days: 1,                       // placeholder
+      days 
     })
     setResult(data)
   }
@@ -31,6 +33,17 @@ function SettingDashboard() {
     <div className="p-4 w-[400px] bg-white flex justify-center flex-col">
       <p>Budget</p>
       <DiscreteSliderSteps value={budget} onChange={setBudget} /> 
+      <p>Duration of Trip</p>
+      <input
+        id="daysInput"
+        type="number"
+        required
+        min="1"
+        value={days}
+        onChange={(e) => setDays(Number(e.target.valueAsNumber))}
+        placeholder="Number of Days"
+        className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+        />
       <RadioGroup />
       <BasicButtons onClick={handleApply} />
       {loading && <p>Generating...</p>}
