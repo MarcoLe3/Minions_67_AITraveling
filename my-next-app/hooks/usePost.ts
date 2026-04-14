@@ -18,9 +18,11 @@ function usePost(url: string){
             setError(true)
             throw new Error("Unable to POST data, please check usePost")
         } finally {
-            setLoading(true)
+            setLoading(false)
         }
     }
 
     return {sendDataToServer, loading, error}
 }
+
+export default usePost
