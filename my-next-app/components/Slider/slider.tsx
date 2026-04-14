@@ -18,18 +18,26 @@ function valuetext(value: number) {
   return `${value}`;
 }
 
-export function DiscreteSliderSteps() {
+interface DiscreteSliderStepsProps {
+    value: number
+    onChange: (value: number) => void
+}
+
+export function DiscreteSliderSteps({ value, onChange }: DiscreteSliderStepsProps) {
   return (
     <Box sx={{ width: 300 }}>
       <SliderMUI
         aria-label="Small steps"
         defaultValue={0}
+        value={value}
+        onChange={(_, v) => onChange(v as number)}
         getAriaValueText={valuetext}
         step={10000}
         marks
         min={0}
         max={100000}
         valueLabelDisplay="auto"
+        valueLabelFormat={valuetext}
       />
     </Box>
   );

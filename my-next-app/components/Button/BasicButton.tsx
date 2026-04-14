@@ -1,7 +1,13 @@
 import Button from '@mui/material/Button';
 
-export default function BasicButton() {
-  return (
-      <Button variant="text">Apply</Button>
-  );
+interface BasicButtonProps {
+    onClick?: () => void
+}
+
+export default function BasicButtons({ onClick }: BasicButtonProps) {
+    return (
+        <Button variant="contained" onClick={onClick} >
+            Apply
+        </Button>
+    );
 }
