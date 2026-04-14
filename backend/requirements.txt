@@ -1,0 +1,12 @@
+# web framework and ASGI server to run application (fast api = receipe, uvicorn = chef that cooks and serves recipe)
+fastapi
+uvicorn[standard]
+
+# data validation for request/response models
+pydantic
+
+# HTTP client for calling the Hugging Face Inference API
+requests
+
+# loads our HF_API_KEY and other secrets from the .env file
+python-dotenv
