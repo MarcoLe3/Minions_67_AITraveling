@@ -20,6 +20,7 @@ For our capstone, we devleoped an AI-powered travel planning application that ge
 - - Hugging Face Model Used: (https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct)
   - Prev: (https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3)
   -   ^ not currently supported by the Hugging Face Inference Router (router.huggingface.co)
+  -   Meta-llama 3.1 model is fully supported and works with the existing prompt and parsing logic.
     
 - **Data Validation**: [Pydantic](https://docs.pydantic.dev/)
 
