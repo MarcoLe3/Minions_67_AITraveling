@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 "use client";
-=======
->>>>>>> 9b2c124781f58aed77c2d0db70c8c9c1391b3c39
 
 import { useState } from "react";
 
@@ -75,7 +72,6 @@ export default function Home() {
   };
 
   return (
-<<<<<<< HEAD
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-md w-full space-y-8">
         <div>
@@ -211,13 +207,6 @@ export default function Home() {
           </div>
         )}
       </div>
-=======
-    <div className="">
-      <section
-        className="h-[300px] w-[300px]"
-      >
-      </section>
->>>>>>> 9b2c124781f58aed77c2d0db70c8c9c1391b3c39
     </div>
   );
 }
