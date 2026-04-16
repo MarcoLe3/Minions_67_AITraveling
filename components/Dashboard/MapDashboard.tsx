@@ -1,5 +1,8 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 97e0067 (might mess up everything)
 'use client'
 
 import Image from "next/image"
@@ -71,6 +74,7 @@ export function MainDashboard(props: MapDashboardProps){
             {openSettingDashboard && <SettingDashboard/>}
         </div>
 
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> f4230e7 (starting dashboard for map)
@@ -98,5 +102,7 @@ export function MapDashboard(props:object){
 >>>>>>> e1a44b0 (starting dashboard for map)
 =======
 >>>>>>> f4230e7 (starting dashboard for map)
+=======
+>>>>>>> 97e0067 (might mess up everything)
     )
 }

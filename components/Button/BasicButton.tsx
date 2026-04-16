@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 interface BasicButtonProp {
   text:string;
   type:"button" | "reset" | "submit" | undefined;
@@ -22,5 +23,12 @@ export default function BasicButton({text,type = "button"}:BasicButtonProp) {
       >
         {text}
       </button>
+=======
+import Button from '@mui/material/Button';
+
+export default function BasicButton() {
+  return (
+      <Button variant="text">Apply</Button>
+>>>>>>> 97e0067 (might mess up everything)
   );
 }
