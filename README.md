@@ -17,7 +17,9 @@ For our capstone, we devleoped an AI-powered travel planning application that ge
 ### Backend
 - **Framework**: [FastAPI](https://fastapi.tiangolo.com/)
 - **AI Integration**: [Hugging Face Inference API](https://huggingface.co/inference-api)
-- - Hugging Face Model Used: (https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3)
+- - Hugging Face Model Used: (https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct)
+  - Prev: (https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3)
+    
 - **Data Validation**: [Pydantic](https://docs.pydantic.dev/)
 
 ### Frontend
