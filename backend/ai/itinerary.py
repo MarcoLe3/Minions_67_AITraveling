@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 HF_API_KEY = os.getenv("HF_API_KEY")
-HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"
+HF_MODEL = "meta-llama/Llama-3.1-8B-Instruct"
 HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
 
 HEADERS = {"Authorization": f"Bearer {HF_API_KEY}"}
@@ -62,8 +62,11 @@ def _call_hf_inference(prompt: str) -> str:
         response.raise_for_status()
     except requests.exceptions.Timeout:
         raise RuntimeError("The request to Hugging Face timed out.")
+    except requests.exceptions.HTTPError as e:
+        error_detail = response.json() if response.content else response.text
+        raise RuntimeError(f"Hugging Face API error: {str(e)} - {error_detail}")
     except Exception as e:
-        raise RuntimeError(f"Hugging Face API error: {str(e)}")
+        raise RuntimeError(f"Unexpected error: {str(e)}")
 
     data = response.json()
     if "choices" in data and len(data["choices"]) > 0:
