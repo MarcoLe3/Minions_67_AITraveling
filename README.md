@@ -19,6 +19,7 @@ For our capstone, we devleoped an AI-powered travel planning application that ge
 - **AI Integration**: [Hugging Face Inference API](https://huggingface.co/inference-api)
 - - Hugging Face Model Used: (https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct)
   - Prev: (https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3)
+  -   ^ not currently supported by the Hugging Face Inference Router (router.huggingface.co)
     
 - **Data Validation**: [Pydantic](https://docs.pydantic.dev/)
 
