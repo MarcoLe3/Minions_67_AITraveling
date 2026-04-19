@@ -1,6 +1,6 @@
 import {useState} from 'react'
 
-function usePost(url: string){
+export function usePost(url: string | undefined | Request){
     const [loading,setLoading] = useState(false)
     const [error, setError] = useState(false)
 
@@ -8,7 +8,7 @@ function usePost(url: string){
         setLoading(true)
         setError(false)
         try{
-            const res = await fetch(url, {
+            const res = await fetch(url!, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),

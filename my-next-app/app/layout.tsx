@@ -1,9 +1,20 @@
 import type { Metadata } from "next";
-import { ThemeProvider } from '@mui/material/styles';
-import theme from '@/theme';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
+import { Roboto, Merriweather } from 'next/font/google';
 import "./globals.css";
 
+const roboto = Roboto({
+  weight: ['300', '400', '500', '700'],
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-roboto',
+});
+
+export const merriweather = Merriweather({
+  weight: ['300', '400', '500', '700'],
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-merriweather'
+})
 
 export const metadata: Metadata = {
   title: "Traveling",
@@ -18,14 +29,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={` h-full antialiased`}
+      className={`${roboto.variable} antialiased`}
     >
       <body>
-        <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-          <ThemeProvider theme={theme}>
-              {children}
-          </ThemeProvider>
-        </AppRouterCacheProvider>
+        {children}
       </body>
     </html>
   );
