@@ -7,8 +7,7 @@ These handle automatic input validation and response schema definition.
 """
 
 class ItineraryRequest(BaseModel):
-    origin: str = Field(..., min_length=1, description="Starting location")
-    destination: str = Field(..., min_length=1, description="Target destination")
+    paths: List[List[str]] = Field(..., description="List of travel paths, e.g. [['origin', 'destination']]")
     budget: int = Field(..., gt=0, description="Total budget must be greater than 0")
     days: int = Field(..., gt=0, description="Number of days must be greater than 0")
 

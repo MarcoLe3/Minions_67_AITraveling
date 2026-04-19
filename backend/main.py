@@ -34,8 +34,7 @@ def generate_itinerary(request: ItineraryRequest):
     try:
         # Business logic is now encapsulated in ai/itinerary.py
         result = generate_itinerary_service(
-            origin=request.origin,
-            destination=request.destination,
+            paths=request.paths,
             budget=request.budget,
             days=request.days
         )

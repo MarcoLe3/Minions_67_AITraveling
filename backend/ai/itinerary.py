@@ -14,16 +14,20 @@ HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
 HEADERS = {"Authorization": f"Bearer {HF_API_KEY}"}
 
 
-def generate_itinerary_service(origin: str, destination: str, budget: int, days: int) -> Dict[str, Any]:
+def generate_itinerary_service(paths: List[List[str]], budget: int, days: int) -> Dict[str, Any]:
     """
     Core service logic for generating an itinerary.
     Constructs the prompt, calls the AI, and parses the response.
     """
     # 1. Prompt Construction (Moved from main.py for better modularity)
+    
+    # Format the travel paths for the prompt
+    path_descriptions = ", then ".join([f"from {p[0]} to {p[1]}" for p in paths if len(p) == 2])
+    
     prompt = (
         "You are an expert AI Travel Assistant. Create a highly detailed and structured "
-        f"travel itinerary for a trip from {origin} to {destination} "
-        f"for a duration of {days} days, with a total budget of ${budget}.\n\n"
+        f"travel itinerary for a trip {path_descriptions} "
+        f"for a total duration of {days} days, with a total budget of ${budget}.\n\n"
         "Please follow this exact format for each day:\n"
         "Day [Number]:\n"
         "- Activities: [List detailed activities]\n"

@@ -12,8 +12,7 @@ def test_itinerary():
     try:
         # Using real inputs for a small test
         result = generate_itinerary_service(
-            origin="San Francisco", 
-            destination="Las Vegas", 
+            paths=[["San Francisco", "Las Vegas"]], 
             budget=500, 
             days=1
         )
