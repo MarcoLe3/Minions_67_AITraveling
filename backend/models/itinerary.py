@@ -6,8 +6,13 @@ Pydantic models for the AI Travel Agent.
 These handle automatic input validation and response schema definition.
 """
 
+class Location(BaseModel):
+    name: str = Field(..., description="Name of the location")
+    lat: float = Field(..., description="Latitude")
+    lng: float = Field(..., description="Longitude")
+
 class ItineraryRequest(BaseModel):
-    paths: List[List[str]] = Field(..., description="List of travel paths, e.g. [['origin', 'destination']]")
+    paths: List[List[Location]] = Field(..., description="List of travel paths, e.g. [[origin_location, dest_location]]")
     budget: int = Field(..., gt=0, description="Total budget must be greater than 0")
     days: int = Field(..., gt=0, description="Number of days must be greater than 0")
 
