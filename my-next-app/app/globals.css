@@ -2,9 +2,11 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@theme {
-}
+@utility custom-scroll {
+  scrollbar-color: #9e9e9e transparent;
 
-@layer base {
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
 
 }
