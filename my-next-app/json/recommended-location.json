@@ -1,0 +1,26 @@
+{
+  "Hong Kong": {
+    "image": "/hong-kong.webp",
+    "title": "Hong Kong",
+    "location": "Hong Kong",
+    "bgColor": "#E8F0FE",
+    "titleColor": "#1A73E8",
+    "locationColor": "#4285F4"
+  },
+  "Singapore": {
+    "image": "/singapore.webp",
+    "title": "Singapore",
+    "location": "Singapore",
+    "bgColor": "#FCE8E6",
+    "titleColor": "#D93025",
+    "locationColor": "#EA4335"
+  },
+  "Cancun": {
+    "image": "/cancun.jpg",
+    "title": "Cancun",
+    "location": "Mexico",
+    "bgColor": "#E6F4EA",
+    "titleColor": "#1E8E3E",
+    "locationColor": "#34A853"
+  }
+}

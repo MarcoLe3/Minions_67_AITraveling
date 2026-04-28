@@ -9,13 +9,13 @@ export default function BasicButton({text,type = "button"}:BasicButtonProp) {
         className="
           typography-button 
           cursor-pointer 
-          border
-          border-gray-300
-          text-primary
-          hover:bg-gray-100
-          rounded-lg
-          font-
-          px-2
+          bg-[#4285F4]
+          text-white
+          hover:bg-[#3066be]
+          hover:shadow-xl
+          rounded-4xl
+          font-semibold
+          px-3
           py-1
         "
         type={type}

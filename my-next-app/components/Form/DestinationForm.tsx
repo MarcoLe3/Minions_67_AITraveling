@@ -25,6 +25,7 @@ interface DestinationIconInput {
     id: string;
     label: string;
     name: string;
+    image: string;
 }
 
 interface DatePickerWithRangeProp {
@@ -42,13 +43,12 @@ export function DatePickerWithRange({name}: DatePickerWithRangeProp) {
     >
       <input type="hidden" name={`${name}_from`} value={date?.from?.toISOString() || ''}/>
       <input type="hidden" name={`${name}_to`} value={date?.to?.toISOString() || ''}/>
-      <FieldLabel htmlFor="date-picker-range" className="font-normal">Date Picker Range</FieldLabel>
       <Popover>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             id="date-picker-range"
-            className="justify-start px-2.5 font-normal"
+            className="justify-start px-2.5 font-semibold"
           >
             <CalendarIcon />
             {date?.from ? (
@@ -80,22 +80,28 @@ export function DatePickerWithRange({name}: DatePickerWithRangeProp) {
   )
 }
 
-function DestinationIconInput({id,label,name}:DestinationIconInput) {
+function DestinationIconInput({id, label, name, image}: DestinationIconInput) {
   return (
     <Box>
       <TextField
         id={id}
         name={name}
         label={label}
+        inputProps={{
+          className: "",
+        }}
+        InputLabelProps={{
+          className: "!text-xl !font-normal",
+        }}
         slotProps={{
           input: {
             startAdornment: (
               <InputAdornment position="start">
                 <Image
-                    alt="travel icon"
-                    width={20}
-                    height={20}
-                    src="/destination.svg"
+                  alt="travel icon"
+                  width={20}
+                  height={20}
+                  src={image}
                 />
               </InputAdornment>
             ),
@@ -121,30 +127,38 @@ export default function DestinationForm(){
 
     return (
         <div
-            className="flex relative top-20"
+            className=""
         >
             <form 
                 noValidate 
                 autoComplete="off" 
-                className="z-10 flex flex-col items-end w-auto gap-4 bg-white p-4 shadow-lg rounded-lg "
+                className="z-10 flex flex-col items-end w-auto gap-4 bg-white p-4 rounded-lg "
                 ref={formRef}
                 onSubmit={handleFormSubmit}
             >
-                <div
-                  className="flex gap-4"
+                <section
+                  className="flex gap-4 items-end"
                 >
                   <DestinationIconInput
                       name="origin"
                       id="leaving-from"
                       label="Leaving from"
+                      image="/destination.svg"
                   />
                   <DestinationIconInput
                       name="destination"
                       id="going-to"
                       label="Going to"
+                      image="/destination.svg"
+                  />
+                  <DestinationIconInput
+                      name="Budget"
+                      id="budget"
+                      label="Budget"
+                      image="/money.svg"
                   />
                   <DatePickerWithRange name="date-range"/>
-                </div>
+                </section>
                 <BasicButton type="submit" text="Search"/>
             </form>
         </div>
