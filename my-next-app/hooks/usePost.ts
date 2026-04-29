@@ -8,7 +8,7 @@ export function usePost(url: string | undefined | Request){
         setLoading(true)
         setError(false)
         try{
-            const res = await fetch(url!, {
+            const res = await fetch('http://localhost:8000/generate-itinerary', {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
@@ -18,9 +18,11 @@ export function usePost(url: string | undefined | Request){
             setError(true)
             throw new Error("Unable to POST data, please check usePost")
         } finally {
-            setLoading(true)
+            setLoading(false)
         }
     }
 
     return {sendDataToServer, loading, error}
 }
+
+export default usePost
