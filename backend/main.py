@@ -42,6 +42,7 @@ def generate_itinerary(request: ItineraryRequest):
         return ItineraryResponse(
             itinerary=result["cleaned_text"],
             days=result["days"],
+            destinations=result["destinations"],
             summary=result["summary"],
             success=True
         )

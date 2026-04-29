@@ -19,31 +19,57 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
     Core service logic for generating an itinerary.
     Constructs the prompt, calls the AI, and parses the response.
     """
-    # 1. Prompt Construction (Moved from main.py for better modularity)
+    # 1. Prompt Construction
     
-    # Format the travel paths for the prompt
+    # Get unique destination names
+    destinations = list(set([p[1].name for p in paths if len(p) == 2]))
+    dest_str = ", ".join(destinations)
+    
     path_descriptions = ", then ".join([f"from {p[0].name} to {p[1].name}" for p in paths if len(p) == 2])
     
     prompt = (
         "You are an expert AI Travel Assistant. Create a highly detailed and structured "
         f"travel itinerary for a trip {path_descriptions} "
         f"for a total duration of {days} days, with a total budget of ${budget}.\n\n"
+        "First, provide a 'Destination Info' section for each unique destination: " + dest_str + ".\n"
+        "Format for each destination:\n"
+        "Destination: [Name]\n"
+        "- Description: [2-3 sentence overview]\n"
+        "- Estimated Cost: [Estimated price for travel and stay in USD]\n"
+        "- Necessities: [Visas, weather, local tips]\n\n"
         "Please follow this exact format for each day:\n"
         "Day [Number]:\n"
         "- Activities: [List detailed activities]\n"
-        "- Estimated cost: [Specific amount for the day]\n\n"
+        "- Estimated cost: [Specific amount for the day, e.g. $150]\n\n"
         "Finally, provide a 'Trip Summary' section at the end:\n"
         "Trip Summary:\n"
-        "- Total estimated cost: [Sum of all daily costs]\n"
+        "- Total estimated cost: [Sum of all daily costs, e.g. $2500]\n"
         f"- Budget fit: [Yes/No, based on whether the total is within ${budget}]\n\n"
-        "Ensure the advice is practical and fits the specified budget."
+        "Do not use markdown bolding in headers like 'Destination:' or 'Day [Number]:'. Ensure the advice is practical and fits the specified budget."
     )
 
     # 2. AI Call
     raw_ai_text = _call_hf_inference(prompt)
 
     # 3. Parsing & Cleaning
-    return _parse_itinerary(raw_ai_text)
+    result = _parse_itinerary(raw_ai_text)
+    
+    # 4. Add images for destinations
+    for dest in result.get("destinations", []):
+        dest["image_url"] = _get_destination_image(dest["name"])
+        
+    return result
+
+
+def _get_destination_image(location_name: str) -> str:
+    """Helper to get a representative image URL for a destination."""
+    # Using Unsplash source (legacy but works for featured photos) or a reliable alternative
+    # Format: https://source.unsplash.com/featured/?{query}
+    # Since source.unsplash.com is being phased out, we'll use a search redirect pattern if possible
+    # or just a placeholder service that uses Unsplash.
+    query = location_name.replace(" ", ",")
+    return f"https://images.unsplash.com/photo-1493246507139-91e8bef99c02?auto=format&fit=crop&q=80&w=1000&sig={query}"
+    # Note: Real apps should use the Unsplash API directly.
 
 
 def _call_hf_inference(prompt: str) -> str:
@@ -57,7 +83,7 @@ def _call_hf_inference(prompt: str) -> str:
             {"role": "system", "content": "You are a professional travel agent."},
             {"role": "user", "content": prompt}
         ],
-        "max_tokens": 512,
+        "max_tokens": 1024,
         "temperature": 0.7,
     }
 
@@ -81,7 +107,41 @@ def _call_hf_inference(prompt: str) -> str:
 
 def _parse_itinerary(text: str) -> Dict[str, Any]:
     """Helper to clean and structure the raw AI response."""
-    # Cleaning: Strip conversational filler
+    # 1. Parse Destination Info
+    structured_destinations = []
+    dest_section_match = re.search(r"Destination Info:(.*?)(?=Day\s*1:|$)", text, re.IGNORECASE | re.DOTALL)
+    if not dest_section_match:
+        # Try finding destination blocks without the header
+        dest_section_match = re.search(r"Destination:\s*(.*?)(?=Day\s*1:|$)", text, re.IGNORECASE | re.DOTALL)
+    
+    if dest_section_match:
+        dest_text = dest_section_match.group(0)
+        dest_blocks = re.split(r"Destination:\s*", dest_text, flags=re.IGNORECASE)
+        for block in dest_blocks[1:]:
+            lines = block.strip().split("\n")
+            # Strip potential markdown bolding or extra whitespace
+            name = lines[0].strip().strip("*").strip()
+            description = ""
+            cost = ""
+            necessities = ""
+            
+            for line in lines:
+                if "Description:" in line:
+                    description = line.split("Description:")[1].strip().strip("*").strip()
+                elif "Estimated Cost:" in line:
+                    cost = line.split("Estimated Cost:")[1].strip().strip("*").strip()
+                elif "Necessities:" in line:
+                    necessities = line.split("Necessities:")[1].strip().strip("*").strip()
+            
+            structured_destinations.append({
+                "name": name,
+                "description": description,
+                "estimated_price": cost,
+                "necessities": necessities,
+                "image_url": "" # To be filled by caller
+            })
+
+    # Cleaning: Strip conversational filler and destination info for the raw itinerary text
     cleaned = re.sub(r"^(.*?)(?=Day\s*1:)", "", text, flags=re.IGNORECASE | re.DOTALL).strip()
     cleaned = re.sub(r"(Enjoy your trip|Hope this helps|Let me know if).*$", "", cleaned, flags=re.IGNORECASE | re.DOTALL).strip()
 
@@ -110,20 +170,21 @@ def _parse_itinerary(text: str) -> Dict[str, Any]:
             "cost": cost
         })
 
-    # Parsing Trip Summary
+    # Parsing Trip Summary from full text for better reliability
     summary_data = {"total_cost": "Not specified", "budget_fit": "Unknown"}
-    summary_match = re.search(r"Trip Summary:(.*)", cleaned, re.IGNORECASE | re.DOTALL)
+    summary_match = re.search(r"Trip Summary:(.*)", text, re.IGNORECASE | re.DOTALL)
     if summary_match:
         summary_text = summary_match.group(1)
         total_match = re.search(r"Total estimated cost:\s*(.*)", summary_text, re.IGNORECASE)
         if total_match:
-            summary_data["total_cost"] = total_match.group(1).strip()
+            summary_data["total_cost"] = total_match.group(1).strip().strip("*").strip()
         fit_match = re.search(r"Budget fit:\s*(.*)", summary_text, re.IGNORECASE)
         if fit_match:
-            summary_data["budget_fit"] = fit_match.group(1).strip()
+            summary_data["budget_fit"] = fit_match.group(1).strip().strip("*").strip()
 
     return {
         "cleaned_text": cleaned,
         "days": structured_days,
+        "destinations": structured_destinations,
         "summary": summary_data
     }

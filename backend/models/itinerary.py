@@ -17,9 +17,17 @@ class ItineraryRequest(BaseModel):
     days: int = Field(..., gt=0, description="Number of days must be greater than 0")
 
 
+class DestinationDetail(BaseModel):
+    name: str
+    image_url: str
+    description: str
+    estimated_price: str
+    necessities: str
+
 class ItineraryResponse(BaseModel):
     itinerary: str # Cleaned raw text
     days: List[Dict[str, Any]] = [] # Structured day-by-day data
+    destinations: List[DestinationDetail] = [] # Detailed info for each stop
     summary: Dict[str, Any] = {} # Structured summary data
     success: bool
     error: Optional[str] = None
