@@ -59,7 +59,7 @@ export function RecommendCard({
         aria-label={`${title} in ${location}`}
         itemScope
       >
-        <header className="flex justify-between items-start">
+        <header className="flex justify-between gap-4 items-start">
           <div>
             <h2
               style={{ color: titleColor }}

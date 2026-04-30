@@ -8,6 +8,7 @@ export function usePost(url: string | undefined | Request){
         setLoading(true)
         setError(false)
         try{
+            
             const res = await fetch(url!, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
