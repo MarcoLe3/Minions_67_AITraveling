@@ -7,7 +7,7 @@ interface BasicButtonProp {
 
 export default function BasicButton({text,type = "button"}:BasicButtonProp) {
   return (
-    <Link href={`/map/blah`}>
+    <Link href={`/map/placeholder`}>
       <button
         className="
           typography-button 
