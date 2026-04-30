@@ -8,7 +8,7 @@ export default async function Home() {
     <main className="flex flex-col items-center w-full gap-10 pt-10 pb-10">
       <section
         aria-label="Hero"
-        className="flex flex-col items-center gap-10 justify-center w-[70vw] h-[80vh] rounded-4xl pt-20 bg-cover bg-center bg-[url(/vocation.jpg)]"
+        className="flex flex-col items-center gap-10 justify-center w-[70vw] h-[80vh] rounded-4xl pt-20 p-4 bg-cover bg-center bg-[url(/vocation.jpg)]"
       >
         <h1 className="text-7xl text-white font-semibold">Travel Easy</h1>
         <DestinationForm />

@@ -1,5 +1,5 @@
-{
-  "hk": {
+[
+ {
     "id": "hk",
     "order": 1,
     "title": "Hong Kong",
@@ -19,7 +19,7 @@
       }
     }
   },
-  "sg": {
+  {
     "id": "sg",
     "order": 2,
     "title": "Singapore",
@@ -39,4 +39,4 @@
       }
     }
   }
-}
+]
