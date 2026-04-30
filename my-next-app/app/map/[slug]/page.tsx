@@ -19,9 +19,23 @@ interface ThumbnailCardProps {
   order: string;
 }
 
+interface Destination {
+  id: string;
+  order: number;
+  title: string;
+  budget: number;
+  description: string;
+  image: string;
+  route: {
+    origin: { label: string; lat: number; lng: number };
+    destination: { label: string; lat: number; lng: number };
+  };
+}
+
 interface SelectedContext {
   selected: ThumbnailCardProps | null;
   setSelected: (value: ThumbnailCardProps | null) => void;
+  removeSelected: (id: string) => void;
 }
 
 const PanelContext = createContext<{
@@ -32,6 +46,7 @@ const PanelContext = createContext<{
 const SelectedContext = createContext<SelectedContext>({
   selected: null,
   setSelected: () => {},
+  removeSelected: () => {}
 });
 
 function CloseButton(){
@@ -91,30 +106,28 @@ function OpenButton(){
     )
 }
 
-function SmallCloseButton(){
-    const [hovered,setHovered] = useState<boolean>(false)
+function SmallCloseButton({ id }: { id: string }) {
+  const [hovered, setHovered] = useState(false);
+  const { removeSelected } = useContext(SelectedContext);
 
-    const enableHover = () => {
-        setHovered(true)
-    }
-
-    const disableHover = () => {
-        setHovered(false)
-    }
-    return (
-        <button
-            onMouseEnter={enableHover}
-            onMouseLeave={disableHover}
-            className="cursor-pointer"
-        >
-            <Image
-                alt="close"
-                src={hovered ? "/close-active.svg" : "/close.svg"}
-                width={20}
-                height={20}
-            />
-        </button>
-    )
+  return (
+    <button
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={(e) => {
+        e.stopPropagation();
+        removeSelected(id);
+      }}
+      className="cursor-pointer"
+    >
+      <Image
+        alt="close"
+        src={hovered ? "/close-active.svg" : "/close.svg"}
+        width={20}
+        height={20}
+      />
+    </button>
+  );
 }
 
 function DescriptionCloseButton() {
@@ -182,7 +195,7 @@ function ThumbnailCard({ id, title, budget, description, image, order }: Thumbna
 
   return (
     <article
-      onClick={() => setSelected(isSelected ? null : { id, title, budget, description, image }<ThumbnailCardProps>)}
+      onClick={() => setSelected(isSelected ? null : { id, title, budget, description, image, order })}
       className={`
         flex flex-col gap-3 w-full h-fit p-3 cursor-pointer
         hover:bg-[#eeeeee]
@@ -190,7 +203,7 @@ function ThumbnailCard({ id, title, budget, description, image, order }: Thumbna
       `}
     >
       <header className="flex justify-end items-center">
-        <SmallCloseButton />
+         <SmallCloseButton id={id} />
       </header>
       <div className={`flex gap-4 items-start ${isSelected ? "text-black" : "text-[#757575]"} hover:text-black`}>
         <span className="text-lg font-medium text-[#424242]">{order}</span>
@@ -215,8 +228,9 @@ function ThumbnailCard({ id, title, budget, description, image, order }: Thumbna
 export default function PanelPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const [enable, setEnable] = useState<boolean>(true);
+  const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<ThumbnailCardProps | null>(null);
-  const [data,setData] = useState({})
+  const [data,setData] = useState<Record<string, Destination>>({})
   useEffect(()=>{
     const loadData = async() =>{
       const destinationJSON = await import("@/json/test-panel.json")
@@ -227,7 +241,9 @@ export default function PanelPage({ params }: { params: Promise<{ slug: string }
   },[])
 
   const budget = useMemo(() => {
-    const cost = Object.values(data).reduce((sum, dest) => sum + (dest as any).budget, 0);
+    const cost = Object.values(data)
+      .filter((dest) => !removed.has((dest as any).id))
+      .reduce((sum, dest) => sum + (dest as any).budget, 0);
     const strCost = cost.toString();
 
     let result = ""
@@ -242,11 +258,16 @@ export default function PanelPage({ params }: { params: Promise<{ slug: string }
     }
 
     return "$" + result
-  }, [data]);
+  }, [data, removed]);
+
+  const removeSelected = (id: string) => {
+    setRemoved(prev => new Set(prev).add(id));
+    if (selected?.id === id) setSelected(null);
+  };
 
   return (
     <PanelContext value={{ enable, setEnable }}>
-      <SelectedContext value={{ selected, setSelected }}>
+      <SelectedContext value={{ selected, setSelected, removeSelected }}>
 
         {!enable && (
           <div className="absolute top-4 left-4">
@@ -257,26 +278,30 @@ export default function PanelPage({ params }: { params: Promise<{ slug: string }
         {enable && (
           <main className="h-[80vh] absolute bg-white rounded-2xl w-[20vw] flex flex-col top-4 left-4">
             <header className="flex justify-between p-4 border-b border-gray-400">
-              <h3 className="text-xl font-medium">{data["hk"]?.title}</h3>
+              <h3 className="text-xl font-medium">{data[0]?.title}</h3>
               <CloseButton />
             </header>
 
             <div className="flex flex-col overflow-y-auto overflow-x-hidden flex-1 custom-scroll">
-              {Object.values(data).map((dest) => (
-                <ThumbnailCard
-                  key={dest.id}
-                  order={String(dest.order)}
-                  id={dest.id}
-                  title={dest.title}
-                  budget={`$${dest.budget.toLocaleString()}`}
-                  description={dest.description}
-                  image={dest.image}
-                />
-              ))}
+              {Object.entries(data)
+                .filter(([key,values]) => !removed.has(values.id))
+                .map(([key,values], index) => {
+                  index = index + 1
+                  return <ThumbnailCard
+                    key={values.id}
+                    order={String(index)}
+                    id={values.id}
+                    title={values.title}
+                    budget={`$${values.budget.toLocaleString()}`}
+                    description={values.description}
+                    image={values.image}
+                  />
+                }
+              )}
             </div>
 
             <footer className="flex justify-end p-4 border-t border-gray-400">
-              <p className="text-sm font-semibold text-[#006064]">Total Budget: {budget as unknown as ReactNode}</p>
+              <p className="text-sm font-semibold text-[#006064]">Total Budget: {budget}</p>
             </footer>
           </main>
         )}
