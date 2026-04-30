@@ -4,7 +4,7 @@ import Box from '@mui/material/Box';
 import InputAdornment from '@mui/material/InputAdornment';
 import Image from "next/image"
 import BasicButton from "@/components/Button/BasicButton.tsx"
-import {usePost} from "@/hooks/usePost.ts"
+import { usePostContext } from "@/Context/PostProvider"
 import {
   useState,
   useRef
@@ -115,7 +115,7 @@ function DestinationIconInput({id, label, name, image}: DestinationIconInput) {
 
 export default function DestinationForm(){
     const formRef = useRef<HTMLFormElement>(null);
-    const {sendDataToServer,loading,error} = usePost(process.env.NEXT_PUBLIC_IP ?? 'http://localhost:8000/generate-itinerary')
+    const {sendDataToServer,loading,error} = usePostContext();
 
     const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -134,7 +134,7 @@ export default function DestinationForm(){
         budget: Number(payload.budget),
         days,
       })
-}
+    }
 
     return (
         <div

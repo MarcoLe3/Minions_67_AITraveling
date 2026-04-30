@@ -9,6 +9,7 @@ import {
     useEffect
 } from "react";
 import Image from "next/image";
+import {usePostContext} from "@/Context/PostProvider"
 
 interface ThumbnailCardProps {
   id:string;
@@ -161,12 +162,11 @@ function DescriptionCard() {
   return (
     <aside
       className="
-        absolute top-4 bg-white rounded-2xl
-        w-[22vw] h-fit flex flex-col
+        absolute top-4 bg-white rounded-2xl w-fit h-fit flex flex-col
         shadow-lg overflow-hidden
         transition-all duration-300
       "
-      style={{ left: "calc(20vw + 2rem)" }}
+      style={{ left: "calc(350px + 2rem)" }}
     >
       <div className="relative w-full h-60">
         <Image
@@ -226,19 +226,11 @@ function ThumbnailCard({ id, title, budget, description, image, order }: Thumbna
 }
 
 export default function PanelPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params);
   const [enable, setEnable] = useState<boolean>(true);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<ThumbnailCardProps | null>(null);
-  const [data,setData] = useState<Record<string, Destination>>({})
-  useEffect(()=>{
-    const loadData = async() =>{
-      const destinationJSON = await import("@/json/test-panel.json")
-      setData(destinationJSON.default)
-    }
-
-    loadData();
-  },[])
+  const { data } = usePostContext();
+  console.log("thedata:", data)
 
   const budget = useMemo(() => {
     const cost = Object.values(data)
@@ -276,7 +268,7 @@ export default function PanelPage({ params }: { params: Promise<{ slug: string }
         )}
 
         {enable && (
-          <main className="h-[80vh] absolute bg-white rounded-2xl w-[20vw] flex flex-col top-4 left-4">
+          <main className="h-[80vh] absolute bg-white rounded-2xl w-[350px] flex flex-col top-4 left-4">
             <header className="flex justify-between p-4 border-b border-gray-400">
               <h3 className="text-xl font-medium">{data[0]?.title}</h3>
               <CloseButton />
