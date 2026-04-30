@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface BasicButtonProp {
   text:string;
   type:"button" | "reset" | "submit" | undefined;
@@ -5,6 +7,7 @@ interface BasicButtonProp {
 
 export default function BasicButton({text,type = "button"}:BasicButtonProp) {
   return (
+    <Link href={`/map/blah`}>
       <button
         className="
           typography-button 
@@ -22,5 +25,6 @@ export default function BasicButton({text,type = "button"}:BasicButtonProp) {
       >
         {text}
       </button>
+    </Link>
   );
 }
