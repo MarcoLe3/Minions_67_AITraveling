@@ -10,7 +10,7 @@ import {
   useRef
 } from "react"
 import { addDays, format } from "date-fns"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, Link } from "lucide-react"
 import { type DateRange } from "react-day-picker"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -115,15 +115,26 @@ function DestinationIconInput({id, label, name, image}: DestinationIconInput) {
 
 export default function DestinationForm(){
     const formRef = useRef<HTMLFormElement>(null);
-    const {sendDataToServer,loading,error} = usePost(process.env.NEXT_PUBLIC_IP)
+    const {sendDataToServer,loading,error} = usePost(process.env.NEXT_PUBLIC_IP ?? 'http://localhost:8000/generate-itinerary')
 
     const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
-      const data = new FormData(formRef.current)
+      const data = new FormData(formRef.current!)
       const payload = Object.fromEntries(data.entries())
-      const res = sendDataToServer(payload)
-      console.log(res)
-    }
+
+      const from = new Date(payload['date-range_from'] as string)
+      const to = new Date(payload['date-range_to'] as string)
+      const days = Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24))
+
+      sendDataToServer({
+        paths: [[
+          { name: payload.origin, lat: 37.7749, lng: 122.4194 },   // hardcoded SF
+          { name: payload.destination, lat: 37.34, lng: 121.89 }, // hardcoded SJ
+        ]],
+        budget: Number(payload.budget),
+        days,
+      })
+}
 
     return (
         <div
@@ -152,7 +163,7 @@ export default function DestinationForm(){
                       image="/destination.svg"
                   />
                   <DestinationIconInput
-                      name="Budget"
+                      name="budget"
                       id="budget"
                       label="Budget"
                       image="/money.svg"
