@@ -34,6 +34,7 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
         "First, provide a 'Destination Info' section for each unique destination: " + dest_str + ".\n"
         "Format for each destination:\n"
         "Destination: [Name]\n"
+        "- Coordinates: [Latitude, Longitude]\n"
         "- Description: [2-3 sentence overview]\n"
         "- Estimated Cost: [Estimated price for travel and stay in USD]\n"
         "- Necessities: [Visas, weather, local tips]\n\n"
@@ -124,6 +125,8 @@ def _parse_itinerary(text: str) -> Dict[str, Any]:
             description = ""
             cost = ""
             necessities = ""
+            lat = None
+            lng = None
             
             for line in lines:
                 if "Description:" in line:
@@ -132,12 +135,23 @@ def _parse_itinerary(text: str) -> Dict[str, Any]:
                     cost = line.split("Estimated Cost:")[1].strip().strip("*").strip()
                 elif "Necessities:" in line:
                     necessities = line.split("Necessities:")[1].strip().strip("*").strip()
+                elif "Coordinates:" in line:
+                    coords_str = line.split("Coordinates:")[1].strip().strip("*").strip()
+                    try:
+                        parts = [p.strip() for p in coords_str.split(',')]
+                        if len(parts) >= 2:
+                            lat = float(parts[0])
+                            lng = float(parts[1])
+                    except Exception:
+                        pass
             
             structured_destinations.append({
                 "name": name,
                 "description": description,
                 "estimated_price": cost,
                 "necessities": necessities,
+                "lat": lat,
+                "lng": lng,
                 "image_url": "" # To be filled by caller
             })
 
