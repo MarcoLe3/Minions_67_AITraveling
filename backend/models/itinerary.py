@@ -8,8 +8,8 @@ These handle automatic input validation and response schema definition.
 
 class Location(BaseModel):
     name: str = Field(..., description="Name of the location")
-    lat: float = Field(..., description="Latitude")
-    lng: float = Field(..., description="Longitude")
+    lat: Optional[float] = Field(None, description="Latitude")
+    lng: Optional[float] = Field(None, description="Longitude")
 
 class ItineraryRequest(BaseModel):
     paths: List[List[Location]] = Field(..., description="List of travel paths, e.g. [[origin_location, dest_location]]")
@@ -23,6 +23,8 @@ class DestinationDetail(BaseModel):
     description: str
     estimated_price: str
     necessities: str
+    lat: Optional[float] = None
+    lng: Optional[float] = None
 
 class ItineraryResponse(BaseModel):
     itinerary: str # Cleaned raw text
