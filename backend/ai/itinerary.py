@@ -113,38 +113,53 @@ def _parse_itinerary(text: str) -> Dict[str, Any]:
     dest_section_match = re.search(r"Destination Info:(.*?)(?=Day\s*1:|$)", text, re.IGNORECASE | re.DOTALL)
     if not dest_section_match:
         # Try finding destination blocks without the header
-        dest_section_match = re.search(r"Destination:\s*(.*?)(?=Day\s*1:|$)", text, re.IGNORECASE | re.DOTALL)
+        dest_section_match = re.search(r"(?i)\*?\*?Destination:\*?\*?\s*(.*?)(?=Day\s*1:|$)", text, re.IGNORECASE | re.DOTALL)
     
     if dest_section_match:
         dest_text = dest_section_match.group(0)
-        dest_blocks = re.split(r"Destination:\s*", dest_text, flags=re.IGNORECASE)
-        for block in dest_blocks[1:]:
+        # We search from start of matched string to Day 1, ensuring we don't drop the first Destination if no header
+        if "Destination Info:" not in dest_text:
+            dest_text = text[:dest_section_match.end()]
+            dest_text = re.sub(r"(?i)^.*?(?=\*?\*?Destination:)", "", dest_text, flags=re.DOTALL)
+            
+        dest_blocks = re.split(r"(?i)\*?\*?Destination:\*?\*?\s*", dest_text)
+        for block in dest_blocks:
+            if not block.strip() or "Info:" in block:
+                continue
             lines = block.strip().split("\n")
-            # Strip potential markdown bolding or extra whitespace
             name = lines[0].strip().strip("*").strip()
+            
             description = ""
             cost = ""
             necessities = ""
             lat = None
             lng = None
             
-            for line in lines:
-                if "Description:" in line:
-                    description = line.split("Description:")[1].strip().strip("*").strip()
-                elif "Estimated Cost:" in line:
-                    cost = line.split("Estimated Cost:")[1].strip().strip("*").strip()
-                elif "Necessities:" in line:
-                    necessities = line.split("Necessities:")[1].strip().strip("*").strip()
-                elif "Coordinates:" in line:
-                    coords_str = line.split("Coordinates:")[1].strip().strip("*").strip()
+            # Extract fields using regex on the block to handle markdown robustly
+            desc_match = re.search(r"(?i)Description:\s*\*?\*?\s*(.*?)(?=\n-|\n\*|$)", block, re.DOTALL)
+            if desc_match:
+                description = desc_match.group(1).strip().strip("*").strip()
+                
+            cost_match = re.search(r"(?i)Estimated Cost:\s*\*?\*?\s*(.*?)(?=\n-|\n\*|$)", block, re.DOTALL)
+            if cost_match:
+                cost = cost_match.group(1).strip().strip("*").strip()
+                
+            nec_match = re.search(r"(?i)Necessities:\s*\*?\*?\s*(.*?)(?=\n-|\n\*|$)", block, re.DOTALL)
+            if nec_match:
+                necessities = nec_match.group(1).strip().strip("*").strip()
+                
+            coord_match = re.search(r"(?i)Coordinates:\s*\*?\*?\s*(.*?)(?=\n-|\n\*|$)", block, re.DOTALL)
+            if coord_match:
+                coords_str = coord_match.group(1).strip().strip("*").strip()
+                # Find all floating point numbers
+                nums = re.findall(r"-?\d+(?:\.\d+)?", coords_str)
+                if len(nums) >= 2:
                     try:
-                        parts = [p.strip() for p in coords_str.split(',')]
-                        if len(parts) >= 2:
-                            lat = float(parts[0])
-                            lng = float(parts[1])
+                        lat = float(nums[0])
+                        lng = float(nums[1])
                     except Exception:
                         pass
-            
+                        
             structured_destinations.append({
                 "name": name,
                 "description": description,

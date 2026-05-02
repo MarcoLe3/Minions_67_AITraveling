@@ -8,8 +8,10 @@ paths = [[loc1, loc2]]
 
 try:
     result = generate_itinerary_service(paths=paths, budget=1500, days=5)
-    print("Destinations:")
-    for dest in result.get("destinations", []):
-        print(f"- {dest.get('name')}: lat={dest.get('lat')}, lng={dest.get('lng')}")
+    print("RAW AI TEXT:")
+    print(result.get("cleaned_text"))
+    print("\nDESTINATIONS:")
+    import json
+    print(json.dumps(result.get("destinations", []), indent=2))
 except Exception as e:
     print(f"Error: {e}")
