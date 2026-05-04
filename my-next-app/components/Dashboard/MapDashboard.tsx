@@ -17,7 +17,7 @@ function SettingDashboard(){
             <p>Budget</p>
             <DiscreteSliderSteps/>
             <RadioGroup/>
-            <BasicButtons/>
+            <BasicButtons text="Search" type="submit"/> 
         </div>
     )
 }

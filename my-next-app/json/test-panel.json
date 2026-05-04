@@ -1,0 +1,42 @@
+[
+ {
+    "id": "hk",
+    "order": 1,
+    "title": "Hong Kong",
+    "budget": 1200,
+    "description": "A vibrant city with stunning skyline views and rich culture.",
+    "image": "/hong-kong.webp",
+    "route": {
+      "origin": {
+        "label": "San Francisco",
+        "lat": 37.7749,
+        "lng": -122.4194
+      },
+      "destination": {
+        "label": "Hong Kong",
+        "lat": 22.3193,
+        "lng": 114.1694
+      }
+    }
+  },
+  {
+    "id": "sg",
+    "order": 2,
+    "title": "Singapore",
+    "budget": 10000,
+    "description": "A modern city-state known for its cleanliness and food scene.",
+    "image": "/singapore.webp",
+    "route": {
+      "origin": {
+        "label": "Hong Kong",
+        "lat": 22.3193,
+        "lng": 114.1694
+      },
+      "destination": {
+        "label": "Singapore",
+        "lat": 1.3521,
+        "lng": 103.8198
+      }
+    }
+  }
+]
