@@ -25,13 +25,15 @@ def test_itinerary():
         print("\n--- Test Successful! ---")
         print(f"Status: Success")
         print(f"Model used: meta-llama/Llama-3.1-8B-Instruct")
-        print(f"Sample Day 1 Activity: {result['days'][0]['activities'][0]}")
-        print(f"Daily Cost: {result['days'][0]['cost']}")
-        print(f"Summary: {result['summary']['total_cost']}")
+        print("\nFull Result Data:")
+        import json
+        print(json.dumps(result, indent=2))
         print("------------------------\n")
     except Exception as e:
         print(f"\n--- Test Failed! ---")
         print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
         print("--------------------\n")
 
 if __name__ == "__main__":
