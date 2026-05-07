@@ -21,14 +21,22 @@ class DestinationDetail(BaseModel):
     name: str
     image_url: str
     description: str
-    estimated_price: str
+    estimated_price: int
     necessities: str
     lat: Optional[float] = None
     lng: Optional[float] = None
 
+class DayDetail(BaseModel):
+    day: int
+    origin: str
+    destination: str
+    image_url: str
+    activities: List[str]
+    cost: int
+
 class ItineraryResponse(BaseModel):
     itinerary: str # Cleaned raw text
-    days: List[Dict[str, Any]] = [] # Structured day-by-day data
+    days: List[DayDetail] = [] # Structured day-by-day data
     destinations: List[DestinationDetail] = [] # Detailed info for each stop
     summary: Dict[str, Any] = {} # Structured summary data
     success: bool

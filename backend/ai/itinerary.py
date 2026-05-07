@@ -36,15 +36,18 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
         "Destination: [Name]\n"
         "- Coordinates: [Latitude, Longitude]\n"
         "- Description: [2-3 sentence overview]\n"
-        "- Estimated Cost: [Estimated price for travel and stay in USD]\n"
+        "- Estimated Cost: [Provide an integer amount only, e.g. 500]\n"
         "- Necessities: [Visas, weather, local tips]\n\n"
         "Please follow this exact format for each day:\n"
         "Day [Number]:\n"
+        "- Origin: [Starting location for the day]\n"
+        "- Destination: [Main destination or ending location for the day]\n"
+        "- Image Query: [A specific landmark or activity name for image search]\n"
         "- Activities: [List detailed activities]\n"
-        "- Estimated cost: [Specific amount for the day, e.g. $150]\n\n"
+        "- Estimated cost: [Specific integer amount for the day, e.g. 150. If it is a range, provide the average as an integer.]\n\n"
         "Finally, provide a 'Trip Summary' section at the end:\n"
         "Trip Summary:\n"
-        "- Total estimated cost: [Sum of all daily costs, e.g. $2500]\n"
+        "- Total estimated cost: [Sum of all daily costs as an integer, e.g. 2500]\n"
         f"- Budget fit: [Yes/No, based on whether the total is within ${budget}]\n\n"
         "Do not use markdown bolding in headers like 'Destination:' or 'Day [Number]:'. Ensure the advice is practical and fits the specified budget."
     )
@@ -56,22 +59,23 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
     result = _parse_itinerary(raw_ai_text)
     
     print("Structured Result:", result)  # Debugging output to verify parsing
-    # 4. Add images for destinations
+    
+    # 4. Add images for destinations and days
     for dest in result.get("destinations", []):
-        dest["image_url"] = _get_destination_image(dest["name"])
+        dest["image_url"] = _get_image_url(dest["name"])
+        
+    for day in result.get("days", []):
+        query = day.get("image_query") or day.get("destination") or "travel"
+        day["image_url"] = _get_image_url(query)
         
     return result
 
 
-def _get_destination_image(location_name: str) -> str:
-    """Helper to get a representative image URL for a destination."""
-    # Using Unsplash source (legacy but works for featured photos) or a reliable alternative
-    # Format: https://source.unsplash.com/featured/?{query}
-    # Since source.unsplash.com is being phased out, we'll use a search redirect pattern if possible
-    # or just a placeholder service that uses Unsplash.
-    query = location_name.replace(" ", ",")
-    return f"https://images.unsplash.com/photo-1493246507139-91e8bef99c02?auto=format&fit=crop&q=80&w=1000&sig={query}"
-    # Note: Real apps should use the Unsplash API directly.
+def _get_image_url(query: str) -> str:
+    """Helper to get a representative image URL."""
+    clean_query = query.replace(" ", ",").lower()
+    # Using LoremFlickr which is more reliable for simple queries than the phased-out source.unsplash.com
+    return f"https://loremflickr.com/800/600/{clean_query}"
 
 
 def _call_hf_inference(prompt: str) -> str:
@@ -107,6 +111,25 @@ def _call_hf_inference(prompt: str) -> str:
     raise RuntimeError("Unexpected response format from AI service.")
 
 
+def _parse_cost_to_int(cost_str: str) -> int:
+    """Helper to parse a cost string into an integer, averaging ranges."""
+    if not cost_str:
+        return 0
+    # Find all numbers in the string
+    nums = re.findall(r"\d+", cost_str.replace(",", ""))
+    if not nums:
+        return 0
+    
+    # Convert to integers
+    int_nums = [int(n) for n in nums]
+    
+    # If it's a range (2 numbers), return the average
+    if len(int_nums) >= 2:
+        return int(sum(int_nums[:2]) / 2)
+    
+    return int_nums[0]
+
+
 def _parse_itinerary(text: str) -> Dict[str, Any]:
     """Helper to clean and structure the raw AI response."""
     # 1. Parse Destination Info
@@ -118,7 +141,6 @@ def _parse_itinerary(text: str) -> Dict[str, Any]:
     
     if dest_section_match:
         dest_text = dest_section_match.group(0)
-        # We search from start of matched string to Day 1, ensuring we don't drop the first Destination if no header
         if "Destination Info:" not in dest_text:
             dest_text = text[:dest_section_match.end()]
             dest_text = re.sub(r"(?i)^.*?(?=\*?\*?Destination:)", "", dest_text, flags=re.DOTALL)
@@ -131,19 +153,18 @@ def _parse_itinerary(text: str) -> Dict[str, Any]:
             name = lines[0].strip().strip("*").strip()
             
             description = ""
-            cost = ""
+            cost_str = ""
             necessities = ""
             lat = None
             lng = None
             
-            # Extract fields using regex on the block to handle markdown robustly
             desc_match = re.search(r"(?i)Description:\s*\*?\*?\s*(.*?)(?=\n-|\n\*|$)", block, re.DOTALL)
             if desc_match:
                 description = desc_match.group(1).strip().strip("*").strip()
                 
             cost_match = re.search(r"(?i)Estimated Cost:\s*\*?\*?\s*(.*?)(?=\n-|\n\*|$)", block, re.DOTALL)
             if cost_match:
-                cost = cost_match.group(1).strip().strip("*").strip()
+                cost_str = cost_match.group(1).strip().strip("*").strip()
                 
             nec_match = re.search(r"(?i)Necessities:\s*\*?\*?\s*(.*?)(?=\n-|\n\*|$)", block, re.DOTALL)
             if nec_match:
@@ -152,7 +173,6 @@ def _parse_itinerary(text: str) -> Dict[str, Any]:
             coord_match = re.search(r"(?i)Coordinates:\s*\*?\*?\s*(.*?)(?=\n-|\n\*|$)", block, re.DOTALL)
             if coord_match:
                 coords_str = coord_match.group(1).strip().strip("*").strip()
-                # Find all floating point numbers
                 nums = re.findall(r"-?\d+(?:\.\d+)?", coords_str)
                 if len(nums) >= 2:
                     try:
@@ -164,20 +184,18 @@ def _parse_itinerary(text: str) -> Dict[str, Any]:
             structured_destinations.append({
                 "name": name,
                 "description": description,
-                "estimated_price": cost,
+                "estimated_price": _parse_cost_to_int(cost_str),
                 "necessities": necessities,
                 "lat": lat,
                 "lng": lng,
-                "image_url": "" # To be filled by caller
+                "image_url": "" 
             })
 
-    # Cleaning: Strip conversational filler and destination info for the raw itinerary text
+    # Cleaning
     cleaned = re.sub(r"^(.*?)(?=Day\s*1:)", "", text, flags=re.IGNORECASE | re.DOTALL).strip()
     cleaned = re.sub(r"(Enjoy your trip|Hope this helps|Let me know if).*$", "", cleaned, flags=re.IGNORECASE | re.DOTALL).strip()
 
-    structured_days: List[Dict[str, Any]] = []
-    
-    # Parsing Day blocks
+    structured_days = []
     day_blocks = re.split(r"Day\s*(\d+):", cleaned, flags=re.IGNORECASE)
     for i in range(1, len(day_blocks), 2):
         day_num = day_blocks[i]
@@ -186,28 +204,50 @@ def _parse_itinerary(text: str) -> Dict[str, Any]:
         if "trip summary" in day_content.lower():
             day_content = re.split(r"Trip Summary:", day_content, flags=re.IGNORECASE)[0].strip()
 
-        cost_match = re.search(r"Estimated cost:\s*(.*)", day_content, re.IGNORECASE)
-        cost = cost_match.group(1).strip() if cost_match else "Not specified"
-        
+        # Extracting new fields
+        origin = ""
+        origin_match = re.search(r"(?i)Origin:\s*(.*)", day_content)
+        if origin_match:
+            origin = origin_match.group(1).strip()
+            day_content = day_content.replace(origin_match.group(0), "")
+
+        destination = ""
+        dest_match = re.search(r"(?i)Destination:\s*(.*)", day_content)
+        if dest_match:
+            destination = dest_match.group(1).strip()
+            day_content = day_content.replace(dest_match.group(0), "")
+
+        image_query = ""
+        img_match = re.search(r"(?i)Image Query:\s*(.*)", day_content)
+        if img_match:
+            image_query = img_match.group(1).strip()
+            day_content = day_content.replace(img_match.group(0), "")
+
+        cost_str = "0"
+        cost_match = re.search(r"(?i)Estimated cost:\s*(.*)", day_content)
         if cost_match:
+            cost_str = cost_match.group(1).strip()
             day_content = day_content.replace(cost_match.group(0), "")
 
         activities = [line.strip("- *").strip() for line in day_content.split("\n") if line.strip().startswith(("-", "*"))]
 
         structured_days.append({
             "day": int(day_num),
+            "origin": origin,
+            "destination": destination,
+            "image_query": image_query, # Helper field
             "activities": activities,
-            "cost": cost
+            "cost": _parse_cost_to_int(cost_str),
+            "image_url": "" # To be filled
         })
 
-    # Parsing Trip Summary from full text for better reliability
-    summary_data = {"total_cost": "Not specified", "budget_fit": "Unknown"}
+    summary_data = {"total_cost": 0, "budget_fit": "Unknown"}
     summary_match = re.search(r"Trip Summary:(.*)", text, re.IGNORECASE | re.DOTALL)
     if summary_match:
         summary_text = summary_match.group(1)
         total_match = re.search(r"Total estimated cost:\s*(.*)", summary_text, re.IGNORECASE)
         if total_match:
-            summary_data["total_cost"] = total_match.group(1).strip().strip("*").strip()
+            summary_data["total_cost"] = _parse_cost_to_int(total_match.group(1))
         fit_match = re.search(r"Budget fit:\s*(.*)", summary_text, re.IGNORECASE)
         if fit_match:
             summary_data["budget_fit"] = fit_match.group(1).strip().strip("*").strip()
