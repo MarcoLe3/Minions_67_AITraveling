@@ -26,6 +26,7 @@ def root():
     return {"message": "AI Travel Agent API is running - Refactored Structure"}
 
 
+
 @app.post("/generate-itinerary", response_model=ItineraryResponse)
 def generate_itinerary(request: ItineraryRequest):
     """
@@ -38,14 +39,17 @@ def generate_itinerary(request: ItineraryRequest):
             budget=request.budget,
             days=request.days
         )
-        
-        return ItineraryResponse(
+
+        clean_res = ItineraryResponse(
             itinerary=result["cleaned_text"],
             days=result["days"],
             destinations=result["destinations"],
             summary=result["summary"],
             success=True
         )
+
+        print("gibbersih", clean_res)
+        return clean_res
     except Exception as e:
         # Unified error handling for the endpoint
         return ItineraryResponse(

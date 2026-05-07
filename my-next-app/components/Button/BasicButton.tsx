@@ -5,9 +5,9 @@ interface BasicButtonProp {
   type:"button" | "reset" | "submit" | undefined;
 }
 
+//TODO: uncomment Link once response is fixed
 export default function BasicButton({text,type = "button"}:BasicButtonProp) {
   return (
-    <Link href={`/map/placeholder`}>
       <button
         className="
           typography-button 
@@ -25,6 +25,5 @@ export default function BasicButton({text,type = "button"}:BasicButtonProp) {
       >
         {text}
       </button>
-    </Link>
   );
 }

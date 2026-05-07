@@ -20,7 +20,7 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
     Constructs the prompt, calls the AI, and parses the response.
     """
     # 1. Prompt Construction
-    
+    print("beginning")
     # Get unique destination names
     destinations = list(set([p[1].name for p in paths if len(p) == 2]))
     dest_str = ", ".join(destinations)
@@ -55,6 +55,7 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
     # 3. Parsing & Cleaning
     result = _parse_itinerary(raw_ai_text)
     
+    print("Structured Result:", result)  # Debugging output to verify parsing
     # 4. Add images for destinations
     for dest in result.get("destinations", []):
         dest["image_url"] = _get_destination_image(dest["name"])

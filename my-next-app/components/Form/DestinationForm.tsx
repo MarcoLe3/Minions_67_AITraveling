@@ -9,6 +9,7 @@ import {
   useState,
   useRef
 } from "react"
+import {useRouter} from "next/navigation"
 import { addDays, format } from "date-fns"
 import { CalendarIcon, Link } from "lucide-react"
 import { type DateRange } from "react-day-picker"
@@ -20,6 +21,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import router from 'next/dist/shared/lib/router/router';
 
 interface DestinationIconInput {
     id: string;
@@ -113,27 +115,39 @@ function DestinationIconInput({id, label, name, image}: DestinationIconInput) {
   );
 }
 
+//TODO: fix handle form
 export default function DestinationForm(){
+    const router = useRouter();
     const formRef = useRef<HTMLFormElement>(null);
     const {sendDataToServer,loading,error} = usePostContext();
 
-    const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
+      console.log("submitted")
       const data = new FormData(formRef.current!)
       const payload = Object.fromEntries(data.entries())
+      console.log("payload:", payload)
 
-      const from = new Date(payload['date-range_from'] as string)
-      const to = new Date(payload['date-range_to'] as string)
-      const days = Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24))
+      const fromStr = payload['date-range_from'] as string;
+      const toStr = payload['date-range_to'] as string;
 
-      sendDataToServer({
+      const from = new Date(fromStr);
+      const to = new Date(toStr);
+      const days = Math.max(1, (to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24))
+
+      const fakeData = {
         paths: [[
-          { name: payload.origin, lat: 37.7749, lng: 122.4194 },   // hardcoded SF
-          { name: payload.destination, lat: 37.34, lng: 121.89 }, // hardcoded SJ
+          { name: payload.origin, lat: 37.7749, lng: 122.4194 },
+          { name: payload.destination, lat: 37.34, lng: 121.89 },
         ]],
-        budget: Number(payload.budget),
+        budget: Number(payload.budget) || 1000,
         days,
-      })
+      }
+      console.log("sent");
+      const result = await sendDataToServer(fakeData)
+      if (result?.success) {
+        router.push('/map/demoMap');
+      }
     }
 
     return (

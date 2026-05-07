@@ -13,10 +13,10 @@ import {usePostContext} from "@/Context/PostProvider"
 
 interface ThumbnailCardProps {
   id:string;
-  title: string;
+  // title: string;
   budget: string;
   description: string;
-  image: string;
+  // image: string;
   order: string;
 }
 
@@ -169,18 +169,18 @@ function DescriptionCard() {
       style={{ left: "calc(350px + 2rem)" }}
     >
       <div className="relative w-full h-60">
-        <Image
+        {/* <Image
           alt={selected.title}
           src={selected.image}
           fill
           className="object-cover"
-        />
+        /> */}
         <DescriptionCloseButton />
       </div>
 
       <div className="flex flex-col gap-4 p-4 overflow-y-auto flex-1 custom-scroll">
         <div className="flex flex-col gap-1">
-          <h4 className="text-2xl font-medium truncate text-black">{selected.title}</h4>
+          {/* <h4 className="text-2xl font-medium truncate text-black">{selected.title}</h4> */}
           <p className="text-lg font-medium text-[#424242]">{selected.budget}</p>
           <p className="text-sm font-medium text-[#424242] leading-relaxed">{selected.description}</p>
         </div>
@@ -189,13 +189,13 @@ function DescriptionCard() {
   );
 }
 
-function ThumbnailCard({ id, title, budget, description, image, order }: ThumbnailCardProps) {
+function ThumbnailCard({ id, budget, description, order }: ThumbnailCardProps) {
   const { selected, setSelected } = useContext(SelectedContext);
   const isSelected = selected?.id === id;
 
   return (
     <article
-      onClick={() => setSelected(isSelected ? null : { id, title, budget, description, image, order })}
+      onClick={() => setSelected(isSelected ? null : { id, budget, description, order })}
       className={`
         flex flex-col gap-3 w-full h-fit p-3 cursor-pointer
         hover:bg-[#eeeeee]
@@ -208,18 +208,18 @@ function ThumbnailCard({ id, title, budget, description, image, order }: Thumbna
       <div className={`flex gap-4 items-start ${isSelected ? "text-black" : "text-[#757575]"} hover:text-black`}>
         <span className="text-lg font-medium text-[#424242]">{order}</span>
         <div className={`flex flex-col flex-1`}>
-          <h4 className="text-xl font-semibold truncate">{title}</h4>
+          {/* <h4 className="text-xl font-semibold truncate">{title}</h4> */}
           <p className="text-lg font-medium line-clamp-2">{budget}</p>
           <p className="text-sm font-medium leading-relaxed line-clamp-2">{description}</p>
         </div>
-        <Image
+        {/* <Image
           alt={`${title} thumbnail`}
           src={image}
           width={100}
           height={100}
           className="rounded-xl object-cover shrink-0 w-[100px] h-[100px]"
           decoding="async"
-        />
+        /> */}
       </div>
     </article>
   );
@@ -233,11 +233,13 @@ export default function PanelPage({ params }: { params: Promise<{ slug: string }
   console.log("thedata:", data)
 
   const budget = useMemo(() => {
-    const cost = Object.values(data)
-      .filter((dest) => !removed.has((dest as any).id))
-      .reduce((sum, dest) => sum + (dest as any).budget, 0);
-    const strCost = cost.toString();
+      // .filter((dest) => !removed.has((dest as any).day))
+    const cost = (data?.days).reduce((sum: number, day: any) => {
+      const dayCost = Number(day.cost) || 0; 
+      return sum + dayCost;
+    }, 0);
 
+    const strCost = cost.toString();
     let result = ""
     let count = 0
     for (let i = strCost.length - 1; i>=0; i--){
@@ -275,21 +277,20 @@ export default function PanelPage({ params }: { params: Promise<{ slug: string }
             </header>
 
             <div className="flex flex-col overflow-y-auto overflow-x-hidden flex-1 custom-scroll">
-              {Object.entries(data)
-                .filter(([key,values]) => !removed.has(values.id))
-                .map(([key,values], index) => {
+              {data?.days
+                .map((day, index) => {
                   index = index + 1
-                  return <ThumbnailCard
-                    key={values.id}
-                    order={String(index)}
-                    id={values.id}
-                    title={values.title}
-                    budget={`$${values.budget.toLocaleString()}`}
-                    description={values.description}
-                    image={values.image}
-                  />
-                }
-              )}
+                  return (
+                    <ThumbnailCard
+                      key={day.day}
+                      order={String(index)}
+                      id={day.day}
+                      budget={`$${day.cost.toLocaleString()}`}
+                      description={day.activities}
+                      // image={day.image}
+                    />
+                  );
+                })}
             </div>
 
             <footer className="flex justify-end p-4 border-t border-gray-400">
