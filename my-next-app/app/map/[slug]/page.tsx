@@ -9,14 +9,14 @@ import {
     useEffect
 } from "react";
 import Image from "next/image";
-import {usePostContext} from "@/Context/PostProvider"
+import { set } from "date-fns";
 
 interface ThumbnailCardProps {
-  id:string;
-  // title: string;
+  id:number;
+  title: string;
   budget: string;
   description: string;
-  // image: string;
+  image: string;
   order: string;
 }
 
@@ -36,7 +36,7 @@ interface Destination {
 interface SelectedContext {
   selected: ThumbnailCardProps | null;
   setSelected: (value: ThumbnailCardProps | null) => void;
-  removeSelected: (id: string) => void;
+  removeSelected: (id: number) => void;
 }
 
 const PanelContext = createContext<{
@@ -107,7 +107,7 @@ function OpenButton(){
     )
 }
 
-function SmallCloseButton({ id }: { id: string }) {
+function SmallCloseButton({ id }: { id: number }) {
   const [hovered, setHovered] = useState(false);
   const { removeSelected } = useContext(SelectedContext);
 
@@ -154,48 +154,65 @@ function DescriptionCloseButton() {
   );
 }
 
+//TODO: fix the title and image
 function DescriptionCard() {
   const { selected } = useContext(SelectedContext);
 
-  if (!selected) return null;
+  const cleanedSelected = useMemo(() => {
+    if (!selected) return null;
+    return {
+      ...selected,
+      description: Array.isArray(selected.description)
+        ? selected.description.filter((desc: string) => { return desc.trim() !== "" && desc !== "Activities:"; })
+        : selected.description
+    };
+  }, [selected]);
 
   return (
     <aside
       className="
-        absolute top-4 bg-white rounded-2xl w-fit h-fit flex flex-col
+        absolute top-4 bg-white rounded-2xl w-100 h-110 flex flex-col
         shadow-lg overflow-hidden
         transition-all duration-300
       "
       style={{ left: "calc(350px + 2rem)" }}
     >
       <div className="relative w-full h-60">
-        {/* <Image
-          alt={selected.title}
-          src={selected.image}
+        <Image
+          alt="dummy"
+          src={cleanedSelected?.image || ""}
           fill
           className="object-cover"
-        /> */}
+          decoding="async"
+        />
         <DescriptionCloseButton />
       </div>
 
       <div className="flex flex-col gap-4 p-4 overflow-y-auto flex-1 custom-scroll">
         <div className="flex flex-col gap-1">
-          {/* <h4 className="text-2xl font-medium truncate text-black">{selected.title}</h4> */}
-          <p className="text-lg font-medium text-[#424242]">{selected.budget}</p>
-          <p className="text-sm font-medium text-[#424242] leading-relaxed">{selected.description}</p>
+          <h4 className="text-2xl font-medium truncate text-black">{cleanedSelected?.title}</h4>
+          <p className="text-lg font-medium text-[#424242]">{cleanedSelected?.budget}</p>
+          <p className="text-sm font-medium text-[#424242] leading-relaxed">{cleanedSelected?.description}</p>
         </div>
       </div>
     </aside>
   );
 }
 
-function ThumbnailCard({ id, budget, description, order }: ThumbnailCardProps) {
+//TODO: add title and image
+function ThumbnailCard({ title, id, budget, description, order, image }: ThumbnailCardProps) {
   const { selected, setSelected } = useContext(SelectedContext);
   const isSelected = selected?.id === id;
 
+  const cleanedDescription = useMemo(() => {
+    return Array.isArray(description)
+      ? description.filter((desc: string) => { return desc.trim() !== "" && desc !== "Activities:"; })
+      : description;
+  }, [description]);
+
   return (
     <article
-      onClick={() => setSelected(isSelected ? null : { id, budget, description, order })}
+      onClick={() => setSelected(isSelected ? null : { title, id, budget, description, order, image })}
       className={`
         flex flex-col gap-3 w-full h-fit p-3 cursor-pointer
         hover:bg-[#eeeeee]
@@ -208,36 +225,45 @@ function ThumbnailCard({ id, budget, description, order }: ThumbnailCardProps) {
       <div className={`flex gap-4 items-start ${isSelected ? "text-black" : "text-[#757575]"} hover:text-black`}>
         <span className="text-lg font-medium text-[#424242]">{order}</span>
         <div className={`flex flex-col flex-1`}>
-          {/* <h4 className="text-xl font-semibold truncate">{title}</h4> */}
+          <h4 className="text-xl font-semibold truncate">{title}</h4>
           <p className="text-lg font-medium line-clamp-2">{budget}</p>
-          <p className="text-sm font-medium leading-relaxed line-clamp-2">{description}</p>
+          <p className="text-sm font-medium leading-relaxed line-clamp-2">{cleanedDescription}</p>
         </div>
-        {/* <Image
-          alt={`${title} thumbnail`}
+        <Image
+          alt={`thumbnail`}
           src={image}
           width={100}
           height={100}
           className="rounded-xl object-cover shrink-0 w-[100px] h-[100px]"
           decoding="async"
-        /> */}
+          loading={id < 4 ? "lazy" : "eager"}
+        />
       </div>
     </article>
   );
 }
 
+//TODO: fix the title and image
 export default function PanelPage({ params }: { params: Promise<{ slug: string }> }) {
   const [enable, setEnable] = useState<boolean>(true);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<ThumbnailCardProps | null>(null);
-  const { data } = usePostContext();
-  console.log("thedata:", data)
+  const [data,setData] = useState<any>(null);
+
+  useEffect(() => {
+    const storedData = sessionStorage.getItem('itineraryData');
+    if (storedData) {
+      setData(JSON.parse(storedData));
+    }
+  }, []);
 
   const budget = useMemo(() => {
-      // .filter((dest) => !removed.has((dest as any).day))
-    const cost = (data?.days).reduce((sum: number, day: any) => {
-      const dayCost = Number(day.cost) || 0; 
-      return sum + dayCost;
-    }, 0);
+    const cost = (data?.days ?? [])
+      .filter((dest) => !removed.has((dest as any).day))
+      .reduce((sum: number, day: any) => {
+        const dayCost = Number(day.cost) || 0; 
+        return sum + dayCost;
+      }, 0);
 
     const strCost = cost.toString();
     let result = ""
@@ -272,22 +298,24 @@ export default function PanelPage({ params }: { params: Promise<{ slug: string }
         {enable && (
           <main className="h-[80vh] absolute bg-white rounded-2xl w-[350px] flex flex-col top-4 left-4">
             <header className="flex justify-between p-4 border-b border-gray-400">
-              <h3 className="text-xl font-medium">{data[0]?.title}</h3>
+              <h3 className="text-xl font-medium">Your vacation</h3>
               <CloseButton />
             </header>
 
             <div className="flex flex-col overflow-y-auto overflow-x-hidden flex-1 custom-scroll">
               {data?.days
+                .filter((day: any) => !removed.has(day.day))
                 .map((day, index) => {
                   index = index + 1
                   return (
                     <ThumbnailCard
                       key={day.day}
+                      title={day.destination}
                       order={String(index)}
-                      id={day.day}
+                      id={Number(day.day)}
                       budget={`$${day.cost.toLocaleString()}`}
                       description={day.activities}
-                      // image={day.image}
+                      image={day.image_url}
                     />
                   );
                 })}
@@ -299,7 +327,7 @@ export default function PanelPage({ params }: { params: Promise<{ slug: string }
           </main>
         )}
 
-        <DescriptionCard />
+        {selected && <DescriptionCard />}
 
       </SelectedContext>
     </PanelContext>

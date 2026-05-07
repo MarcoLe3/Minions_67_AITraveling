@@ -10,6 +10,7 @@ interface PostContextType {
 
 const PostContext = createContext<PostContextType | null>(null);
 
+//TODO: clean up console.logs
 export function PostProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -30,6 +31,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
       console.log("Response received");
       const json = await res.json();
       setData(json);
+      sessionStorage.setItem('itineraryData', JSON.stringify(json));
       console.log("Data set in context:", json);
       return json;
     } catch {
