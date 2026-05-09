@@ -49,6 +49,7 @@ export default function MainMap() {
                      {days.map((day: any, index: number) => (
                         <MapRenderDirections
                             key={index}
+                            index={index+1}
                             originLocation={day.origin}
                             destinationLocation={day.destination}
                         />
