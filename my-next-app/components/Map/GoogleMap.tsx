@@ -8,7 +8,7 @@ function MapUserPanTo(){
     const map = useMap();
     useEffect(()=>{
         
-        if (!map || !navigator.geolocation) console.log("hi");
+        if (!map || !navigator.geolocation) return;
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const userPosition = {
@@ -32,6 +32,10 @@ export default function MainMap() {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAP_API
     const mapId = process.env.NEXT_PUBLIC_MAP_ID
 
+    const raw = typeof window !== 'undefined' ? sessionStorage.getItem('itineraryData') : null
+    const result = raw ? JSON.parse(raw) : null
+    const days = result.days 
+
     return (
         <APIProvider apiKey={apiKey as string}>
             <div style={{height:'100vh', width:'100%'}}>
@@ -41,11 +45,14 @@ export default function MainMap() {
                     mapId={mapId}
                     disableDefaultUI={true}
                 >
-                    {/* <MapUserPanTo /> */}
-                    <MapRenderDirections
-                        originLocation="San Francisco State University" 
-                        destinationLocation="San Jose State University"
-                    />
+                     <MapUserPanTo /> 
+                     {days.map((day: any, index: number) => (
+                        <MapRenderDirections
+                            key={index}
+                            originLocation={day.origin}
+                            destinationLocation={day.destination}
+                        />
+                    ))}
                 </Map>
             </div>
         </APIProvider>
