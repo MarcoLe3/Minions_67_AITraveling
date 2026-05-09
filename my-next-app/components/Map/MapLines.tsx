@@ -8,6 +8,8 @@ interface RouteComponentProp {
   destinationlocation:string;
 }
 
+const renderedLocations = new Set<string>()
+
 export default function MapRenderDirections({originLocation, destinationLocation, index}: RouteComponentProp){
   const [route, setRoute] = useState<google.maps.DirectionsResult[]>([]);
   const [travelingMode, setTravelingMode] = useState("DRIVING");
@@ -50,26 +52,30 @@ export default function MapRenderDirections({originLocation, destinationLocation
 
         directionRenderer.current.setDirections(routeInformation)
 
+        setTimeout(() => {
         const startLocation = routeInformation.routes[0].legs[0].start_location
         const endLocation = routeInformation.routes[0].legs[0].end_location
-        new google.maps.Marker({
-          position: startLocation,
-          map,
-          label: {
-            text: `${index}`,
-            color: 'white',
-            fontWeight: 'bold',
-          },
-        })
-        new google.maps.Marker({
-          position: endLocation,
-          map,
-          label: {
-            text: `${index}`,
-            color: 'white',
-            fontWeight: 'bold',
-          },
-        })
+        const startKey = `${startLocation.lat().toFixed(3)},${startLocation.lng().toFixed(3)}`
+        const endKey = `${endLocation.lat().toFixed(3)},${endLocation.lng().toFixed(3)}`
+
+        if (!renderedLocations.has(startKey)) {
+          renderedLocations.add(startKey)
+          new google.maps.Marker({
+            position: startLocation,
+            map,
+            label: { text: `${index}`, color: 'white', fontWeight: 'bold' }
+          })
+        }
+
+        if (!renderedLocations.has(endKey)) {
+          renderedLocations.add(endKey)
+          new google.maps.Marker({
+            position: endLocation,
+            map,
+            label: { text: `${index}`, color: 'white', fontWeight: 'bold' }
+          })
+        }
+        }, index * 10) 
 
         setRoute((prevRoute: google.maps.DirectionsResult[]) => [...prevRoute,routeInformation])
       } catch (error) {
