@@ -35,10 +35,11 @@ interface DatePickerWithRangeProp {
 }
 
 export function DatePickerWithRange({name}: DatePickerWithRangeProp) {
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: new Date(new Date().getFullYear(), 0, 20),
-    to: addDays(new Date(new Date().getFullYear(), 0, 20), 20),
-  })
+  const [date, setDate] = useState<DateRange | undefined>(undefined)
+  /*const [date, setDate] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: addDays(new Date(), 7),
+  })*/
   return (
     <Field 
       className="mx-auto w-60"
@@ -75,6 +76,7 @@ export function DatePickerWithRange({name}: DatePickerWithRangeProp) {
             selected={date}
             onSelect={setDate}
             numberOfMonths={2}
+            disabled={{ before: new Date() }}
           />
         </PopoverContent>
       </Popover>
