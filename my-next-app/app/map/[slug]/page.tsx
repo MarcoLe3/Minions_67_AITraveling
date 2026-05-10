@@ -1,4 +1,5 @@
 'use client';
+import { useRouter } from 'next/navigation'
 
 import { 
     use, 
@@ -243,6 +244,28 @@ function ThumbnailCard({ title, id, budget, description, order, image }: Thumbna
   );
 }
 
+function BackToFormButton() {
+  const [hovered, setHovered] = useState<boolean>(false)
+  const router = useRouter()
+
+  return (
+    <button
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="cursor-pointer"
+      onClick={() => router.push('/')}
+    >
+      <Image
+        alt="back"
+        src={hovered ? "/arrow-right.svg" : "/arrow-right.svg"}
+        width={25}
+        height={25}
+        className="rotate-180 bg-black rounded-3xl px-2 py-2 w-fit h-fit"
+      />
+    </button>
+  )
+}
+
 //TODO: fix the title and image
 export default function PanelPage({ params }: { params: Promise<{ slug: string }> }) {
   const [enable, setEnable] = useState<boolean>(true);
@@ -290,13 +313,18 @@ export default function PanelPage({ params }: { params: Promise<{ slug: string }
       <SelectedContext value={{ selected, setSelected, removeSelected }}>
 
         {!enable && (
-          <div className="absolute top-4 left-4">
+          <div className="absolute top-4 left-4 flex flex-col gap-1">
+            <BackToFormButton/>
             <OpenButton />
           </div>
         )}
 
         {enable && (
-          <main className="h-[80vh] absolute bg-white rounded-2xl w-[350px] flex flex-col top-4 left-4">
+          <>
+          <div className="absolute top-4 left-4">
+            <BackToFormButton />
+          </div>
+          <main className="h-[80vh] absolute bg-white rounded-2xl w-[350px] flex flex-col top-15 left-4">
             <header className="flex justify-between p-4 border-b border-gray-400">
               <h3 className="text-xl font-medium">Your vacation</h3>
               <CloseButton />
@@ -325,6 +353,7 @@ export default function PanelPage({ params }: { params: Promise<{ slug: string }
               <p className="text-sm font-semibold text-[#006064]">Total Budget: {budget}</p>
             </footer>
           </main>
+          </>
         )}
 
         {selected && <DescriptionCard />}
