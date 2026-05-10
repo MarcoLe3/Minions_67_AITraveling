@@ -47,11 +47,15 @@ export default function MainMap() {
                 >
                      <MapUserPanTo /> 
                      {days.map((day: any, index: number) => (
-                        <MapRenderDirections
+                         <MapRenderDirections
                             key={index}
                             index={index+1}
                             originLocation={day.origin}
+                            originLat={day.origin_lat}
+                            originLng={day.origin_lng}
                             destinationLocation={day.destination}
+                            destinationLat={day.destination_lat}
+                            destinationLng={day.destination_lng}
                         />
                     ))}
                 </Map>

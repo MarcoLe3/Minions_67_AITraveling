@@ -38,18 +38,20 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
         "- Description: [2-3 sentence overview]\n"
         "- Estimated Cost: [Provide an integer amount only, e.g. 500]\n"
         "- Necessities: [Visas, weather, local tips]\n\n"
-        "Please follow this exact format for each day:\n"
+        "Please follow this exact format for each day. Be extremely specific with Origin and Destination names (e.g. use specific hotel names, landmarks, or restaurants, NOT just the city name):\n"
         "Day [Number]:\n"
-        "- Origin: [Starting location for the day]\n"
-        "- Destination: [Main destination or ending location for the day]\n"
+        "- Origin: [Specific starting location name, e.g. 'Marriott Paris Opera Hotel']\n"
+        "- Destination: [Specific ending location name, e.g. 'Eiffel Tower' or 'Le Jules Verne Restaurant']\n"
+        "- Coordinates: [Origin Lat, Origin Lng] to [Destination Lat, Destination Lng]\n"
         "- Image Query: [A specific landmark or activity name for image search]\n"
         "- Activities: [List detailed activities]\n"
-        "- Estimated cost: [Specific integer amount for the day, e.g. 150. If it is a range, provide the average as an integer.]\n\n"
+        "- Estimated cost: [Specific integer amount for the day, e.g. 150]\n\n"
         "Finally, provide a 'Trip Summary' section at the end:\n"
         "Trip Summary:\n"
-        "- Total estimated cost: [Sum of all daily costs as an integer, e.g. 2500]\n"
+        "- Total estimated cost: [Sum of all daily costs as an integer]\n"
         f"- Budget fit: [Yes/No, based on whether the total is within ${budget}]\n\n"
-        "Do not use markdown bolding in headers like 'Destination:' or 'Day [Number]:'. Ensure the advice is practical and fits the specified budget."
+        "IMPORTANT: Do not repeat the city name as both Origin and Destination for the same day if the travel is within that city. Instead, use specific locations within the city. "
+        "Do not use markdown bolding in headers like 'Destination:' or 'Day [Number]:'."
     )
 
     # 2. AI Call
@@ -217,6 +219,21 @@ def _parse_itinerary(text: str) -> Dict[str, Any]:
             destination = dest_match.group(1).strip()
             day_content = day_content.replace(dest_match.group(0), "")
 
+        origin_lat = None
+        origin_lng = None
+        dest_lat = None
+        dest_lng = None
+        coord_match = re.search(r"(?i)Coordinates:\s*\[?(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\]?\s*to\s*\[?(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\]?", day_content)
+        if coord_match:
+            try:
+                origin_lat = float(coord_match.group(1))
+                origin_lng = float(coord_match.group(2))
+                dest_lat = float(coord_match.group(3))
+                dest_lng = float(coord_match.group(4))
+            except Exception:
+                pass
+            day_content = day_content.replace(coord_match.group(0), "")
+
         image_query = ""
         img_match = re.search(r"(?i)Image Query:\s*(.*)", day_content)
         if img_match:
@@ -234,7 +251,11 @@ def _parse_itinerary(text: str) -> Dict[str, Any]:
         structured_days.append({
             "day": int(day_num),
             "origin": origin,
+            "origin_lat": origin_lat,
+            "origin_lng": origin_lng,
             "destination": destination,
+            "destination_lat": dest_lat,
+            "destination_lng": dest_lng,
             "image_query": image_query, # Helper field
             "activities": activities,
             "cost": _parse_cost_to_int(cost_str),

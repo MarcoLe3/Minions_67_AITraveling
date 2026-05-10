@@ -5,7 +5,11 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 interface RouteComponentProp {
   index: number;
   originLocation: string;
-  destinationlocation:string;
+  originLat?: number;
+  originLng?: number;
+  destinationLocation: string;
+  destinationLat?: number;
+  destinationLng?: number;
 }
 
 const renderedLocations = new Set<string>()
@@ -43,9 +47,17 @@ export default function MapRenderDirections({originLocation, destinationLocation
 
     const renderRoute = async()=> {
       try{
+        const origin = (originLat !== undefined && originLng !== undefined) 
+          ? { lat: originLat, lng: originLng } 
+          : originLocation;
+          
+        const destination = (destinationLat !== undefined && destinationLng !== undefined) 
+          ? { lat: destinationLat, lng: destinationLng } 
+          : destinationLocation;
+
         const routeInformation = await directionService.current.route({
-          origin: originLocation,
-          destination: destinationLocation,
+          origin: origin,
+          destination: destination,
           travelMode: google.maps.TravelMode[travelingMode],
           provideRouteAlternatives: false
         })

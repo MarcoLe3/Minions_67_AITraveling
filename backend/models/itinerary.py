@@ -29,7 +29,11 @@ class DestinationDetail(BaseModel):
 class DayDetail(BaseModel):
     day: int
     origin: str
+    origin_lat: Optional[float] = None
+    origin_lng: Optional[float] = None
     destination: str
+    destination_lat: Optional[float] = None
+    destination_lng: Optional[float] = None
     image_url: str
     activities: List[str]
     cost: int

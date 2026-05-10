@@ -24,6 +24,7 @@ Destination: London
 Day 1:
 - Origin: CDG Airport
 - Destination: Eiffel Tower
+- Coordinates: [49.0097, 2.5479] to [48.8584, 2.2945]
 - Image Query: Eiffel Tower at sunset
 - Activities:
   - Visit the tower
@@ -33,6 +34,7 @@ Day 1:
 Day 2:
 - Origin: Hotel Central
 - Destination: Louvre Museum
+- Coordinates: [48.8606, 2.3376] to [48.8606, 2.3376]
 - Image Query: Louvre Pyramid
 - Activities:
   - See the Mona Lisa
@@ -65,10 +67,14 @@ def test_itinerary_parsing():
     # Check days
     print(f"Days found: {len(result['days'])}")
     for d in result['days']:
-        print(f"  Day {d['day']}: Origin={d['origin']}, Dest={d['destination']}, Cost={d['cost']} ({type(d['cost'])})")
+        print(f"  Day {d['day']}: Origin={d['origin']} ({d['origin_lat']}, {d['origin_lng']}), Dest={d['destination']} ({d['destination_lat']}, {d['destination_lng']}), Cost={d['cost']}")
         assert isinstance(d['cost'], int)
         assert d['origin'] != ""
         assert d['destination'] != ""
+        assert d['origin_lat'] is not None
+        assert d['origin_lng'] is not None
+        assert d['destination_lat'] is not None
+        assert d['destination_lng'] is not None
         assert d['image_query'] != ""
         
     # Check summary
