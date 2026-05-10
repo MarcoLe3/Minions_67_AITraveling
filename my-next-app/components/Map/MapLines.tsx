@@ -14,7 +14,7 @@ interface RouteComponentProp {
 
 const renderedLocations = new Set<string>()
 
-export default function MapRenderDirections({originLocation, destinationLocation, index}: RouteComponentProp){
+export default function MapRenderDirections({originLocation, destinationLocation, index, originLat, originLng, destinationLat, destinationLng}: RouteComponentProp){
   const [route, setRoute] = useState<google.maps.DirectionsResult[]>([]);
   const [travelingMode, setTravelingMode] = useState("DRIVING");
   const directionRenderer = useRef(null)
@@ -47,6 +47,7 @@ export default function MapRenderDirections({originLocation, destinationLocation
 
     const renderRoute = async()=> {
       try{
+        /*
         const origin = (originLat !== undefined && originLng !== undefined) 
           ? { lat: originLat, lng: originLng } 
           : originLocation;
@@ -54,10 +55,10 @@ export default function MapRenderDirections({originLocation, destinationLocation
         const destination = (destinationLat !== undefined && destinationLng !== undefined) 
           ? { lat: destinationLat, lng: destinationLng } 
           : destinationLocation;
-
+        */
         const routeInformation = await directionService.current.route({
-          origin: origin,
-          destination: destination,
+          origin: originLocation,
+          destination: destinationLocation,
           travelMode: google.maps.TravelMode[travelingMode],
           provideRouteAlternatives: false
         })
