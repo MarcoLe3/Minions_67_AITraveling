@@ -1,6 +1,7 @@
 'use client';
 import { useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { useEffect, useState, useMemo, useRef } from 'react';
+import { useActiveDay } from '@/Context/ActiveDayContext';
 
 interface RouteComponentProp {
   index: number;
@@ -19,6 +20,7 @@ export default function MapRenderDirections({originLocation, destinationLocation
   const [travelingMode, setTravelingMode] = useState("DRIVING");
   const directionRenderer = useRef(null)
   const directionService = useRef(null)
+  const { activeDay, setActiveDay } = useActiveDay()
 
   const map = useMap();
   const routeLib = useMapsLibrary("routes");
@@ -34,10 +36,10 @@ export default function MapRenderDirections({originLocation, destinationLocation
       directionService.current = new routeLib.DirectionsService();
     }
 
-    return ()=>{
+    /* return ()=>{
       directionRenderer.current = null;
       directionService.current = null;
-    }
+    } */
   },[routeLib, map, directionRenderer, directionService])
 
   useEffect(()=> {
@@ -73,22 +75,35 @@ export default function MapRenderDirections({originLocation, destinationLocation
 
         if (!renderedLocations.has(startKey)) {
           renderedLocations.add(startKey)
-          new google.maps.Marker({
+          const startMarker = new google.maps.Marker({
             position: startLocation,
             map,
             label: { text: `${index}`, color: 'white', fontWeight: 'bold' }
+          })
+          startMarker.addListener('click', () => {
+            setActiveDay(index)
           })
         }
 
         if (!renderedLocations.has(endKey)) {
           renderedLocations.add(endKey)
-          new google.maps.Marker({
+          const endMarker = new google.maps.Marker({
             position: endLocation,
             map,
             label: { text: `${index}`, color: 'white', fontWeight: 'bold' }
           })
+          endMarker.addListener('click', () => {
+              setActiveDay(index)
+          })
         }
-        }, index * 10) 
+        }, index * 30) 
+
+        directionRenderer.current.setOptions({
+          polylineOptions: {
+          strokeColor: activeDay === index ? '#FF0000' : '#4285F4',
+          strokeWeight: activeDay === index ? 6 : 4,
+          }
+        })
 
         setRoute((prevRoute: google.maps.DirectionsResult[]) => [...prevRoute,routeInformation])
       } catch (error) {
@@ -98,7 +113,7 @@ export default function MapRenderDirections({originLocation, destinationLocation
 
     renderRoute()
 
-  },[routeLib,destinationLocation,originLocation,directionRenderer.current,directionService.current])
+  },[routeLib,destinationLocation,originLocation,directionRenderer.current,directionService.current, activeDay])
 
   return (
     <div>
