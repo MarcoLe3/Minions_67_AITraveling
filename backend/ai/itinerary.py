@@ -1,7 +1,9 @@
 import os
 import re
 import requests
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
+import json
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 # Ensure environment variables are loaded
@@ -13,6 +15,40 @@ HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
 
 HEADERS = {"Authorization": f"Bearer {HF_API_KEY}"}
 
+
+# --- Pydantic Models for AI Output ---
+
+class AIDestination(BaseModel):
+    name: str = Field(..., description="Name of the destination")
+    description: str = Field(..., description="2-3 sentence overview")
+    estimated_price: int = Field(..., description="Estimated cost as an integer")
+    necessities: str = Field(..., description="Visas, weather, local tips")
+    lat: Optional[float] = Field(None, description="Latitude")
+    lng: Optional[float] = Field(None, description="Longitude")
+
+class AIDay(BaseModel):
+    day: int = Field(..., description="Day number")
+    origin: str = Field(..., description="Specific starting location name")
+    origin_lat: Optional[float] = Field(None, description="Origin latitude")
+    origin_lng: Optional[float] = Field(None, description="Origin longitude")
+    destination: str = Field(..., description="Specific ending location name")
+    destination_lat: Optional[float] = Field(None, description="Destination latitude")
+    destination_lng: Optional[float] = Field(None, description="Destination longitude")
+    image_query: str = Field(..., description="Specific landmark or activity name for image search")
+    activities: List[str] = Field(..., description="List of detailed activities")
+    cost: int = Field(..., description="Specific integer amount for the day")
+
+class AISummary(BaseModel):
+    total_cost: int = Field(..., description="Sum of all daily costs as an integer")
+    budget_fit: str = Field(..., description="Yes/No, based on whether the total is within budget")
+
+class AIItineraryResponse(BaseModel):
+    destinations: List[AIDestination]
+    days: List[AIDay]
+    summary: AISummary
+
+
+# --- Service Logic ---
 
 def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -> Dict[str, Any]:
     """
@@ -31,27 +67,38 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
         "You are an expert AI Travel Assistant. Create a highly detailed and structured "
         f"travel itinerary for a trip {path_descriptions} "
         f"for a total duration of {days} days, with a total budget of ${budget}.\n\n"
-        "First, provide a 'Destination Info' section for each unique destination: " + dest_str + ".\n"
-        "Format for each destination:\n"
-        "Destination: [Name]\n"
-        "- Coordinates: [Latitude, Longitude]\n"
-        "- Description: [2-3 sentence overview]\n"
-        "- Estimated Cost: [Provide an integer amount only, e.g. 500]\n"
-        "- Necessities: [Visas, weather, local tips]\n\n"
-        "Please follow this exact format for each day. Be extremely specific with Origin and Destination names (e.g. use specific hotel names, landmarks, or restaurants, NOT just the city name):\n"
-        "Day [Number]:\n"
-        "- Origin: [Specific starting location name, e.g. 'Marriott Paris Opera Hotel']\n"
-        "- Destination: [Specific ending location name, e.g. 'Eiffel Tower' or 'Le Jules Verne Restaurant']\n"
-        "- Coordinates: [Origin Lat, Origin Lng] to [Destination Lat, Destination Lng]\n"
-        "- Image Query: [A specific landmark or activity name for image search]\n"
-        "- Activities: [List detailed activities]\n"
-        "- Estimated cost: [Specific integer amount for the day, e.g. 150]\n\n"
-        "Finally, provide a 'Trip Summary' section at the end:\n"
-        "Trip Summary:\n"
-        "- Total estimated cost: [Sum of all daily costs as an integer]\n"
-        f"- Budget fit: [Yes/No, based on whether the total is within ${budget}]\n\n"
-        "IMPORTANT: Do not repeat the city name as both Origin and Destination for the same day if the travel is within that city. Instead, use specific locations within the city. "
-        "Do not use markdown bolding in headers like 'Destination:' or 'Day [Number]:'."
+        "Return the itinerary in JSON format matching this structure:\n"
+        "{\n"
+        "  \"destinations\": [\n"
+        "    {\n"
+        "      \"name\": \"City/Place Name\",\n"
+        "      \"description\": \"Overview\",\n"
+        "      \"estimated_price\": 500,\n"
+        "      \"necessities\": \"Tips/Weather/Visas\",\n"
+        "      \"lat\": float, \"lng\": float\n"
+        "    }\n"
+        "  ],\n"
+        "  \"days\": [\n"
+        "    {\n"
+        "      \"day\": 1,\n"
+        "      \"origin\": \"Specific Hotel/Landmark\",\n"
+        "      \"origin_lat\": float, \"origin_lng\": float,\n"
+        "      \"destination\": \"Specific Attraction/Restaurant\",\n"
+        "      \"destination_lat\": float, \"destination_lng\": float,\n"
+        "      \"image_query\": \"Specific landmark for images\",\n"
+        "      \"activities\": [\"Activity 1\", \"Activity 2\"],\n"
+        "      \"cost\": 150\n"
+        "    }\n"
+        "  ],\n"
+        "  \"summary\": {\n"
+        "    \"total_cost\": total_sum,\n"
+        "    \"budget_fit\": \"Yes/No\"\n"
+        "  }\n"
+        "}\n\n"
+        "IMPORTANT: Be extremely specific with Origin and Destination names (e.g. use specific hotel names, landmarks, or restaurants, NOT just the city name). "
+        "Provide precise coordinates for every origin and destination. "
+        "All costs MUST be integers. "
+        "Return ONLY the JSON object."
     )
 
     # 2. AI Call
@@ -134,148 +181,38 @@ def _parse_cost_to_int(cost_str: str) -> int:
 
 def _parse_itinerary(text: str) -> Dict[str, Any]:
     """Helper to clean and structure the raw AI response."""
-    # 1. Parse Destination Info
-    structured_destinations = []
-    dest_section_match = re.search(r"Destination Info:(.*?)(?=Day\s*1:|$)", text, re.IGNORECASE | re.DOTALL)
-    if not dest_section_match:
-        # Try finding destination blocks without the header
-        dest_section_match = re.search(r"(?i)\*?\*?Destination:\*?\*?\s*(.*?)(?=Day\s*1:|$)", text, re.IGNORECASE | re.DOTALL)
+    # 1. Extract JSON from text (in case it's wrapped in markdown blocks)
+    json_str = text
+    if "```json" in text:
+        json_str = text.split("```json")[1].split("```")[0].strip()
+    elif "```" in text:
+        json_str = text.split("```")[1].split("```")[0].strip()
     
-    if dest_section_match:
-        dest_text = dest_section_match.group(0)
-        if "Destination Info:" not in dest_text:
-            dest_text = text[:dest_section_match.end()]
-            dest_text = re.sub(r"(?i)^.*?(?=\*?\*?Destination:)", "", dest_text, flags=re.DOTALL)
-            
-        dest_blocks = re.split(r"(?i)\*?\*?Destination:\*?\*?\s*", dest_text)
-        for block in dest_blocks:
-            if not block.strip() or "Info:" in block:
-                continue
-            lines = block.strip().split("\n")
-            name = lines[0].strip().strip("*").strip()
-            
-            description = ""
-            cost_str = ""
-            necessities = ""
-            lat = None
-            lng = None
-            
-            desc_match = re.search(r"(?i)Description:\s*\*?\*?\s*(.*?)(?=\n-|\n\*|$)", block, re.DOTALL)
-            if desc_match:
-                description = desc_match.group(1).strip().strip("*").strip()
-                
-            cost_match = re.search(r"(?i)Estimated Cost:\s*\*?\*?\s*(.*?)(?=\n-|\n\*|$)", block, re.DOTALL)
-            if cost_match:
-                cost_str = cost_match.group(1).strip().strip("*").strip()
-                
-            nec_match = re.search(r"(?i)Necessities:\s*\*?\*?\s*(.*?)(?=\n-|\n\*|$)", block, re.DOTALL)
-            if nec_match:
-                necessities = nec_match.group(1).strip().strip("*").strip()
-                
-            coord_match = re.search(r"(?i)Coordinates:\s*\*?\*?\s*(.*?)(?=\n-|\n\*|$)", block, re.DOTALL)
-            if coord_match:
-                coords_str = coord_match.group(1).strip().strip("*").strip()
-                nums = re.findall(r"-?\d+(?:\.\d+)?", coords_str)
-                if len(nums) >= 2:
-                    try:
-                        lat = float(nums[0])
-                        lng = float(nums[1])
-                    except Exception:
-                        pass
-                        
-            structured_destinations.append({
-                "name": name,
-                "description": description,
-                "estimated_price": _parse_cost_to_int(cost_str),
-                "necessities": necessities,
-                "lat": lat,
-                "lng": lng,
-                "image_url": "" 
-            })
+    # Clean up any leading/trailing text that isn't JSON
+    start_idx = json_str.find("{")
+    end_idx = json_str.rfind("}")
+    if start_idx != -1 and end_idx != -1:
+        json_str = json_str[start_idx : end_idx + 1]
 
-    # Cleaning
-    cleaned = re.sub(r"^(.*?)(?=Day\s*1:)", "", text, flags=re.IGNORECASE | re.DOTALL).strip()
-    cleaned = re.sub(r"(Enjoy your trip|Hope this helps|Let me know if).*$", "", cleaned, flags=re.IGNORECASE | re.DOTALL).strip()
-
-    structured_days = []
-    day_blocks = re.split(r"Day\s*(\d+):", cleaned, flags=re.IGNORECASE)
-    for i in range(1, len(day_blocks), 2):
-        day_num = day_blocks[i]
-        day_content = day_blocks[i+1].strip()
+    try:
+        data = json.loads(json_str)
+        # Validate with Pydantic
+        itinerary_data = AIItineraryResponse(**data)
         
-        if "trip summary" in day_content.lower():
-            day_content = re.split(r"Trip Summary:", day_content, flags=re.IGNORECASE)[0].strip()
-
-        # Extracting new fields
-        origin = ""
-        origin_match = re.search(r"(?i)Origin:\s*(.*)", day_content)
-        if origin_match:
-            origin = origin_match.group(1).strip()
-            day_content = day_content.replace(origin_match.group(0), "")
-
-        destination = ""
-        dest_match = re.search(r"(?i)Destination:\s*(.*)", day_content)
-        if dest_match:
-            destination = dest_match.group(1).strip()
-            day_content = day_content.replace(dest_match.group(0), "")
-
-        origin_lat = None
-        origin_lng = None
-        dest_lat = None
-        dest_lng = None
-        coord_match = re.search(r"(?i)Coordinates:\s*\[?(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\]?\s*to\s*\[?(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\]?", day_content)
-        if coord_match:
-            try:
-                origin_lat = float(coord_match.group(1))
-                origin_lng = float(coord_match.group(2))
-                dest_lat = float(coord_match.group(3))
-                dest_lng = float(coord_match.group(4))
-            except Exception:
-                pass
-            day_content = day_content.replace(coord_match.group(0), "")
-
-        image_query = ""
-        img_match = re.search(r"(?i)Image Query:\s*(.*)", day_content)
-        if img_match:
-            image_query = img_match.group(1).strip()
-            day_content = day_content.replace(img_match.group(0), "")
-
-        cost_str = "0"
-        cost_match = re.search(r"(?i)Estimated cost:\s*(.*)", day_content)
-        if cost_match:
-            cost_str = cost_match.group(1).strip()
-            day_content = day_content.replace(cost_match.group(0), "")
-
-        activities = [line.strip("- *").strip() for line in day_content.split("\n") if line.strip().startswith(("-", "*"))]
-
-        structured_days.append({
-            "day": int(day_num),
-            "origin": origin,
-            "origin_lat": origin_lat,
-            "origin_lng": origin_lng,
-            "destination": destination,
-            "destination_lat": dest_lat,
-            "destination_lng": dest_lng,
-            "image_query": image_query, # Helper field
-            "activities": activities,
-            "cost": _parse_cost_to_int(cost_str),
-            "image_url": "" # To be filled
-        })
-
-    summary_data = {"total_cost": 0, "budget_fit": "Unknown"}
-    summary_match = re.search(r"Trip Summary:(.*)", text, re.IGNORECASE | re.DOTALL)
-    if summary_match:
-        summary_text = summary_match.group(1)
-        total_match = re.search(r"Total estimated cost:\s*(.*)", summary_text, re.IGNORECASE)
-        if total_match:
-            summary_data["total_cost"] = _parse_cost_to_int(total_match.group(1))
-        fit_match = re.search(r"Budget fit:\s*(.*)", summary_text, re.IGNORECASE)
-        if fit_match:
-            summary_data["budget_fit"] = fit_match.group(1).strip().strip("*").strip()
-
-    return {
-        "cleaned_text": cleaned,
-        "days": structured_days,
-        "destinations": structured_destinations,
-        "summary": summary_data
-    }
+        # Convert back to dict and add cleaned_text for compatibility
+        result = itinerary_data.model_dump()
+        
+        # Construct a "cleaned_text" field for compatibility if needed
+        # (Though structured data is preferred now)
+        days_text = []
+        for d in result["days"]:
+            days_text.append(f"Day {d['day']}: {d['origin']} to {d['destination']}")
+        result["cleaned_text"] = "\n".join(days_text)
+        
+        return result
+        
+    except (json.JSONDecodeError, ValueError) as e:
+        print(f"Failed to parse AI JSON: {e}")
+        print("Raw text:", text)
+        # Fallback or re-raise
+        raise RuntimeError(f"Failed to parse itinerary JSON: {str(e)}")
