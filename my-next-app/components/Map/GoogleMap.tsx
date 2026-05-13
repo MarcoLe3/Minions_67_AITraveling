@@ -35,13 +35,14 @@ export default function MainMap() {
     const raw = typeof window !== 'undefined' ? sessionStorage.getItem('itineraryData') : null
     const result = raw ? JSON.parse(raw) : null
     const days = result.days 
+    const defaultCenter = days?.[0]?.origin_lat ? { lat: days[0].origin_lat, lng: days[0].origin_lng } : { lat: 37.7749, lng: -122.4194 };
 
     return (
         <APIProvider apiKey={apiKey as string}>
             <div style={{height:'100vh', width:'100%'}}>
                 <Map
-                    defaultCenter={{ lat: 37.7749, lng: -122.4194 }}
-                    defaultZoom={15}
+                    defaultCenter={defaultCenter}
+                    defaultZoom={11}
                     mapId={mapId}
                     disableDefaultUI={true}
                 >

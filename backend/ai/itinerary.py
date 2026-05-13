@@ -64,21 +64,22 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
     path_descriptions = ", then ".join([f"from {p[0].name} to {p[1].name}" for p in paths if len(p) == 2])
     
     prompt = (
-        f"Generate a {days}-day travel itinerary for {path_descriptions} with a budget of ${budget}.\n"
+        f"Generate a {days}-day travel itinerary for a trip to {path_descriptions} with a budget of ${budget}.\n"
         "Output ONLY a JSON object with this EXACT structure:\n"
         "{\n"
         "  \"destinations\": [{\"name\": \"...\", \"description\": \"...\", \"estimated_price\": 0, \"necessities\": \"...\", \"lat\": 0.0, \"lng\": 0.0}],\n"
         "  \"days\": [\n"
-        "    {\"day\": 1, \"origin\": \"...\", \"origin_lat\": 0.0, \"origin_lng\": 0.0, \"destination\": \"...\", \"destination_lat\": 0.0, \"destination_lng\": 0.0, \"image_query\": \"...\", \"activities\": [\"...\"], \"cost\": 0}\n"
+        "    {\"day\": 1, \"origin\": \"Specific location in destination\", \"origin_lat\": 0.0, \"origin_lng\": 0.0, \"destination\": \"Specific attraction in destination\", \"destination_lat\": 0.0, \"destination_lng\": 0.0, \"image_query\": \"...\", \"activities\": [\"...\"], \"cost\": 0}\n"
         "  ],\n"
         "  \"summary\": {\"total_cost\": 0, \"budget_fit\": \"Yes/No\"}\n"
         "}\n"
         "RULES:\n"
-        "1. 'destinations' list: exactly 5 unique entries.\n"
-        "2. 'days' list: exactly " + str(days) + " entries (one per day).\n"
-        "3. 'summary' object: MUST be a top-level key, NOT inside the 'days' list.\n"
-        "4. Coordinates and costs are required and must be numeric.\n"
-        "5. Output NO text other than the JSON object."
+        "1. FOCUS all activities and locations EXCLUSIVELY on the destination(s) (e.g., if flying London to Paris, only show Paris attractions).\n"
+        "2. 'destinations' list: exactly 5 unique attractions/places within the destination(s).\n"
+        "3. 'days' list: exactly " + str(days) + " entries. Each day must show a specific route within the destination city.\n"
+        "4. 'summary' object: MUST be a top-level key.\n"
+        "5. Coordinates and costs are required and must be numeric.\n"
+        "6. Output NO text other than the JSON object."
     )
 
     # 2. AI Call
@@ -186,11 +187,16 @@ def _parse_itinerary(text: str) -> Dict[str, Any]:
     # 2. Fix potential issues with control characters
     json_str = json_str.replace('\n', ' ').replace('\r', ' ')
     
-    # 3. Attempt to fix common unescaped quote issues in "key": "value" pairs
-    # This is a bit aggressive but can save many failed responses
-    # We look for quotes that are NOT followed by a colon, comma, brace, or bracket
-    # This is complex, so let's stick to simpler fixes first or use a library if possible.
-    # For now, let's just ensure we have a clean string.
+    # 3. Attempt to fix common AI mistake where it uses a comma instead of a colon for "days" or "summary"
+    json_str = re.sub(r'"(days|summary|destinations)"\s*,\s*(\[|{)', r'"\1": \2', json_str)
+    
+    # 3b. Fix extra brace before "days" (e.g. '}, {"days":')
+    json_str = re.sub(r'\}\s*,\s*\{\s*"(days|summary)"', r', "\1"', json_str)
+    
+    # 4. Fix accidental backslashes before quotes in keys (e.g. \"summary\")
+    json_str = json_str.replace('\\"', '"')
+    
+    # 5. Attempt to fix common unescaped quote issues in "key": "value" pairs
 
     try:
         data = json.loads(json_str)

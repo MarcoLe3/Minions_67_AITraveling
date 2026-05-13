@@ -49,7 +49,6 @@ export default function MapRenderDirections({originLocation, destinationLocation
 
     const renderRoute = async()=> {
       try{
-        /*
         const origin = (originLat !== undefined && originLng !== undefined) 
           ? { lat: originLat, lng: originLng } 
           : originLocation;
@@ -57,10 +56,10 @@ export default function MapRenderDirections({originLocation, destinationLocation
         const destination = (destinationLat !== undefined && destinationLng !== undefined) 
           ? { lat: destinationLat, lng: destinationLng } 
           : destinationLocation;
-        */
+
         const routeInformation = await directionService.current.route({
-          origin: originLocation,
-          destination: destinationLocation,
+          origin: origin,
+          destination: destination,
           travelMode: google.maps.TravelMode[travelingMode],
           provideRouteAlternatives: false
         })
