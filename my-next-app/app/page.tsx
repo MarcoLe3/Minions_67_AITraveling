@@ -59,7 +59,7 @@ export default async function Home() {
       </section>
 
       {/* ── Stats strip ──────────────────────────────────────── */}
-      <section aria-label="Key stats" className="w-full bg-white dark:bg-gray-950 border-y border-gray-100 dark:border-gray-900 py-12 transition-colors duration-300">
+      <section aria-label="Key stats" className="w-full bg-white dark:bg-gray-950 border-y border-gray-100 dark:border-gray-900 py-8 transition-colors duration-300">
         <ul className="flex justify-around items-center max-w-4xl mx-auto list-none gap-6 flex-wrap">
           {stats.map(({ value, label, icon: Icon }, i) => (
             <li key={label} className="flex items-center gap-4">
@@ -79,7 +79,7 @@ export default async function Home() {
       </section>
 
       {/* ── Trips we recommend ───────────────────────────────── */}
-      <section aria-label="Recommended destinations" className="w-full flex flex-col items-center gap-12 py-24 px-6 bg-white dark:bg-gray-950 transition-colors duration-300">
+      <section aria-label="Recommended destinations" className="w-full flex flex-col items-center gap-12 py-12 px-6 bg-white dark:bg-gray-950 transition-colors duration-300">
         <div className="flex flex-col items-center gap-4 text-center max-w-xl">
           <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-blue-500 dark:text-blue-400 font-semibold bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-full">
             <Sparkles size={12} />

@@ -4,6 +4,7 @@ import requests
 from typing import Dict, Any, List, Optional, Union
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import random
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -106,10 +107,10 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
         f"- ALL locations must be physically inside {dest_str}. No {origin_str}, no airports, no transit.\n"
         "- \"destinations\": exactly 5 items.\n"
         "- \"days\": exactly {days} items, one per day.\n"
-        "- Each day's \"activities\": 2 to 3 items ONLY.\n"
+        "- Each day's \"activities\": 2 to 3 items ONLY. Include at least one specific local or popular restaurant, cafe, or food spot to try.\n"
         "- All descriptions: 2 to 3 sentences. Include what the activity is, what to do there, and any critical 'need to know' info (like booking) and 'hours' for museums/stores.\n"
-        f"- All lat/lng MUST be the exact, real GPS coordinates of the specific landmark. DO NOT use the city center or destination's general coordinates for individual activities.\n"
-        "- Every activity must have its own accurate coordinates. If two activities are at the same place, they can share, but they must be AT that place.\n"
+        f"- !!! CRITICAL !!! PIN POINT ACCURACY: Every lat/lng MUST be the exact, real GPS coordinate of that specific building, restaurant, or attraction. DO NOT use the same coordinate for multiple activities.\n"
+        "- Every activity MUST have its own UNIQUE and precise coordinates. If you give the same coordinates for different activities, you have failed.\n"
         "- Each \"search_query\" MUST be a specific, descriptive landmark name AND include the city name (e.g., \"Golden Gate Bridge Visitor Center, San Francisco\").\n"
         "- All cost fields must be integers.\n"
         f"- \"budget_fit\": \"Yes\" if total_cost <= {budget}, otherwise \"No\".\n"
@@ -136,6 +137,20 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
         raise last_error
 
     print("Structured Result:", result)
+
+    # 3. Add a tiny bit of jitter to activities with identical coordinates to prevent stacking
+    seen_coords = set()
+    for day in result.get("days", []):
+        for activity in day.get("activities", []):
+            lat, lng = activity.get("lat"), activity.get("lng")
+            if lat is not None and lng is not None:
+                # If coordinates are identical or extremely close, add a tiny random offset
+                # (approx 10-20 meters) so pins are clickable individually.
+                while any(abs(lat - s_lat) < 0.00005 and abs(lng - s_lng) < 0.00005 for s_lat, s_lng in seen_coords):
+                    lat += 0.0001 * (random.random() - 0.5)
+                    lng += 0.0001 * (random.random() - 0.5)
+                activity["lat"], activity["lng"] = lat, lng
+                seen_coords.add((lat, lng))
 
     # 4. Fetch images for destinations, day headers, and every activity concurrently.
     #    Google Places on the frontend is used as the primary source; these URLs
