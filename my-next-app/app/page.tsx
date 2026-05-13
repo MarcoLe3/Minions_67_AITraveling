@@ -1,7 +1,7 @@
 import DestinationForm from "@/components/Form/DestinationForm.tsx"
 import { RecommendCard } from "@/components/Card/RecommendCard.tsx"
 import { ThemeToggle } from "@/components/Button/ThemeToggle.tsx"
-import { MapPin, Sparkles, TrendingUp, Clock } from "lucide-react"
+import { MapPin, Sparkles, TrendingUp, Clock, Plane } from "lucide-react"
 
 const stats = [
   { value: "150+", label: "Destinations", icon: MapPin },
@@ -21,8 +21,8 @@ export default async function Home() {
         aria-label="Hero"
         className="relative w-full h-screen flex flex-col items-center justify-center bg-cover bg-center bg-[url(/vocation.jpg)]"
       >
-        {/* gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/25 to-black/60 pointer-events-none" />
+        {/* layered gradient — dark top for text, darker bottom for form */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-black/70 pointer-events-none" />
 
         {/* theme toggle — top right */}
         <div className="absolute top-5 right-5 z-20">
@@ -30,16 +30,20 @@ export default async function Home() {
         </div>
 
         {/* hero content */}
-        <div className="relative z-10 flex flex-col items-center gap-8 px-6 text-center max-w-3xl">
-          <span className="text-white/70 uppercase tracking-[0.25em] text-xs font-semibold">
+        <div className="relative z-10 flex flex-col items-center gap-6 px-6 text-center max-w-4xl">
+
+          {/* eyebrow */}
+          <span className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/20 text-white/80 uppercase tracking-[0.2em] text-xs font-semibold px-4 py-2 rounded-full">
+            <Plane size={12} className="-rotate-45" />
             AI-Powered Travel Planning
           </span>
 
-          <h1 className="text-8xl text-white font-bold leading-none drop-shadow-2xl">
+          {/* headline — "Travel" light, "Easy" bold blue-tinted */}
+          <h1 className="text-[clamp(3.5rem,10vw,6.5rem)] leading-none drop-shadow-2xl font-bold text-blue-200">
             Travel Easy
           </h1>
 
-          <p className="text-xl text-white/85 max-w-xl font-light leading-relaxed">
+          <p className="text-xl text-white/80 max-w-xl font-light leading-relaxed">
             Plan your perfect trip with real-time pricing, destination insights,
             and personalised itineraries — all powered by AI.
           </p>
@@ -55,7 +59,7 @@ export default async function Home() {
       </section>
 
       {/* ── Stats strip ──────────────────────────────────────── */}
-      <section aria-label="Key stats" className="w-full bg-white dark:bg-gray-900 border-y border-gray-100 dark:border-gray-800 py-12 transition-colors duration-300">
+      <section aria-label="Key stats" className="w-full bg-white dark:bg-gray-950 border-y border-gray-100 dark:border-gray-900 py-12 transition-colors duration-300">
         <ul className="flex justify-around items-center max-w-4xl mx-auto list-none gap-6 flex-wrap">
           {stats.map(({ value, label, icon: Icon }, i) => (
             <li key={label} className="flex items-center gap-4">

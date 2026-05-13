@@ -6,6 +6,7 @@ import InputAdornment from '@mui/material/InputAdornment'
 import Image from 'next/image'
 import BasicButton from '@/components/Button/BasicButton.tsx'
 import { usePostContext } from '@/Context/PostProvider'
+import { useTheme } from '@/Context/ThemeContext'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
@@ -16,6 +17,16 @@ import { Calendar } from '@/components/ui/calendar'
 import { Field } from '@/components/ui/field'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
+// MUI sx overrides applied when dark mode is active
+const darkFieldSx = {
+  '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.55)' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#93c5fd' },
+  '& .MuiInput-input': { color: 'rgba(255,255,255,0.9)' },
+  '& .MuiInput-underline:before': { borderBottomColor: 'rgba(255,255,255,0.2)' },
+  '& .MuiInput-underline:hover:not(.Mui-disabled):before': { borderBottomColor: 'rgba(255,255,255,0.45)' },
+  '& .MuiInput-underline:after': { borderBottomColor: '#93c5fd' },
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface PlaceResult {
@@ -24,9 +35,9 @@ interface PlaceResult {
   lng: number
 }
 
-// ── Date picker (unchanged) ───────────────────────────────────────────────────
+// ── Date picker ───────────────────────────────────────────────────────────────
 
-export function DatePickerWithRange({ name }: { name: string }) {
+export function DatePickerWithRange({ name, darkMode }: { name: string; darkMode?: boolean }) {
   const [date, setDate] = useState<DateRange | undefined>(undefined)
   return (
     <Field className="mx-auto w-60">
@@ -34,7 +45,15 @@ export function DatePickerWithRange({ name }: { name: string }) {
       <input type="hidden" name={`${name}_to`} value={date?.to?.toISOString() || ''} />
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" id="date-picker-range" className="justify-start px-2.5 font-semibold">
+          <Button
+            variant="outline"
+            id="date-picker-range"
+            className={`justify-start px-2.5 font-semibold ${
+              darkMode
+                ? 'bg-transparent border-white/20 text-white/80 hover:bg-white/10 hover:text-white'
+                : ''
+            }`}
+          >
             <CalendarIcon />
             {date?.from ? (
               date.to ? (
@@ -47,7 +66,10 @@ export function DatePickerWithRange({ name }: { name: string }) {
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 bg-white" align="start">
+        <PopoverContent
+          className={`w-auto p-0 ${darkMode ? 'bg-gray-800 border-white/10 text-white' : 'bg-white'}`}
+          align="start"
+        >
           <Calendar
             mode="range"
             defaultMonth={date?.from}
@@ -64,19 +86,30 @@ export function DatePickerWithRange({ name }: { name: string }) {
 
 // ── Plain text input (used for Budget) ───────────────────────────────────────
 
-function PlainInput({ id, label, name, image }: { id: string; label: string; name: string; image: string }) {
+function PlainInput({
+  id, label, name, image, darkMode,
+}: {
+  id: string; label: string; name: string; image: string; darkMode?: boolean
+}) {
   return (
     <Box>
       <TextField
         id={id}
         name={name}
         label={label}
+        sx={darkMode ? darkFieldSx : {}}
         InputLabelProps={{ className: '!text-xl !font-normal' }}
         slotProps={{
           input: {
             startAdornment: (
               <InputAdornment position="start">
-                <Image alt="icon" width={20} height={20} src={image} />
+                <Image
+                  alt="icon"
+                  width={20}
+                  height={20}
+                  src={image}
+                  className={darkMode ? 'invert opacity-60' : ''}
+                />
               </InputAdornment>
             ),
           },
@@ -90,18 +123,16 @@ function PlainInput({ id, label, name, image }: { id: string; label: string; nam
 // ── City autocomplete input ───────────────────────────────────────────────────
 
 function PlaceAutocompleteInput({
-  label,
-  image,
-  onPlaceSelect,
+  label, image, darkMode, onPlaceSelect,
 }: {
   label: string
   image: string
+  darkMode?: boolean
   onPlaceSelect: (place: PlaceResult) => void
 }) {
   const [value, setValue] = useState('')
   const [inputEl, setInputEl] = useState<HTMLInputElement | null>(null)
   const places = useMapsLibrary('places')
-  // Keep callback ref stable so the Places effect doesn't re-run on parent re-renders
   const onSelectRef = useRef(onPlaceSelect)
   useEffect(() => { onSelectRef.current = onPlaceSelect }, [onPlaceSelect])
 
@@ -133,12 +164,19 @@ function PlaceAutocompleteInput({
         value={value}
         onChange={e => setValue(e.target.value)}
         inputRef={setInputEl}
+        sx={darkMode ? darkFieldSx : {}}
         InputLabelProps={{ className: '!text-xl !font-normal' }}
         slotProps={{
           input: {
             startAdornment: (
               <InputAdornment position="start">
-                <Image alt="icon" width={20} height={20} src={image} />
+                <Image
+                  alt="icon"
+                  width={20}
+                  height={20}
+                  src={image}
+                  className={darkMode ? 'invert opacity-60' : ''}
+                />
               </InputAdornment>
             ),
           },
@@ -149,12 +187,13 @@ function PlaceAutocompleteInput({
   )
 }
 
-// ── Form body (must be inside APIProvider to use useMapsLibrary) ──────────────
+// ── Form body ─────────────────────────────────────────────────────────────────
 
 function FormBody() {
   const router = useRouter()
   const formRef = useRef<HTMLFormElement>(null)
   const { sendDataToServer, loading } = usePostContext()
+  const { isDark } = useTheme()
 
   const [origin, setOrigin] = useState<PlaceResult | null>(null)
   const [destination, setDestination] = useState<PlaceResult | null>(null)
@@ -211,7 +250,7 @@ function FormBody() {
     <form
       noValidate
       autoComplete="off"
-      className="z-10 flex flex-col items-end w-auto gap-4 bg-white p-4 rounded-lg"
+      className="z-10 flex flex-col items-end w-auto gap-4 bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl p-6 rounded-2xl shadow-2xl border border-white/30 dark:border-white/10"
       ref={formRef}
       onSubmit={handleSubmit}
     >
@@ -219,22 +258,24 @@ function FormBody() {
         <PlaceAutocompleteInput
           label="Leaving from"
           image="/destination.svg"
+          darkMode={isDark}
           onPlaceSelect={setOrigin}
         />
         <PlaceAutocompleteInput
           label="Going to"
           image="/destination.svg"
+          darkMode={isDark}
           onPlaceSelect={setDestination}
         />
-        <PlainInput name="budget" id="budget" label="Budget" image="/money.svg" />
-        <DatePickerWithRange name="date-range" />
+        <PlainInput name="budget" id="budget" label="Budget" image="/money.svg" darkMode={isDark} />
+        <DatePickerWithRange name="date-range" darkMode={isDark} />
       </section>
       <BasicButton type="submit" text={loading ? 'Searching...' : 'Search'} />
     </form>
   )
 }
 
-// ── Default export — wraps in APIProvider so Places library is available ──────
+// ── Default export ────────────────────────────────────────────────────────────
 
 export default function DestinationForm() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAP_API

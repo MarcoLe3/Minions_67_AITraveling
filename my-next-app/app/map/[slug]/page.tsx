@@ -7,10 +7,14 @@ import { useItinerary, ActivityFull } from '@/Context/ItineraryContext'
 import { ThemeToggle } from '@/components/Button/ThemeToggle'
 
 // ── Google Places photo hook ──────────────────────────────────────────────────
+// fallbackUrl is shown immediately; replaced with a real Places photo when one loads.
 
-function usePlacePhoto(name: string, destination: string): string {
-  const [url, setUrl] = useState('')
+function usePlacePhoto(name: string, destination: string, fallbackUrl: string): string {
+  const [url, setUrl] = useState(fallbackUrl)
   const places = useMapsLibrary('places')
+
+  // Keep fallback in sync if the activity changes
+  useEffect(() => { setUrl(fallbackUrl) }, [fallbackUrl])
 
   useEffect(() => {
     if (!places || !name) return
@@ -107,8 +111,7 @@ interface ActivityCardProps {
 }
 
 function ActivityCard({ activity, isActive, cardRef, onClick, onRemove }: ActivityCardProps) {
-  const photoUrl = usePlacePhoto(activity.name, activity.destination)
-  const imgSrc = photoUrl || activity.image_url
+  const imgSrc = usePlacePhoto(activity.name, activity.destination, activity.image_url)
 
   return (
     <article
@@ -177,8 +180,7 @@ function ActivityCard({ activity, isActive, cardRef, onClick, onRemove }: Activi
 // ── Detail panel (shown when a card is active) ────────────────────────────────
 
 function DetailPanel({ activity, onClose }: { activity: ActivityFull; onClose: () => void }) {
-  const photoUrl = usePlacePhoto(activity.name, activity.destination)
-  const imgSrc = photoUrl || activity.image_url
+  const imgSrc = usePlacePhoto(activity.name, activity.destination, activity.image_url)
 
   return (
     <aside

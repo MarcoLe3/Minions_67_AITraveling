@@ -123,28 +123,27 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
 
     print("Structured Result:", result)
 
-    # 4. Fetch images for destinations and day headers (activities get photos from Google Places on the frontend)
+    # 4. Fetch images for destinations, day headers, and every activity concurrently.
+    #    Google Places on the frontend is used as the primary source; these URLs
+    #    are the guaranteed fallback so an image always appears.
     tasks: list[tuple[dict, str, str]] = []
     for dest in result.get("destinations", []):
         tasks.append((dest, dest["name"], dest_str))
     for day in result.get("days", []):
         query = day.get("image_query") or day.get("destination") or "travel"
         tasks.append((day, query, dest_str))
+        for activity in day.get("activities", []):
+            tasks.append((activity, activity["name"], dest_str))
 
     def _fetch(item: tuple[dict, str, str]):
         obj, name, ctx = item
         return obj, _get_image_url(name, ctx)
 
-    with ThreadPoolExecutor(max_workers=8) as pool:
+    with ThreadPoolExecutor(max_workers=16) as pool:
         futures = {pool.submit(_fetch, t): t for t in tasks}
         for fut in as_completed(futures):
             obj, url = fut.result()
             obj["image_url"] = url
-
-    # Activities intentionally get no image_url — the frontend fetches real photos via Google Places
-    for day in result.get("days", []):
-        for activity in day.get("activities", []):
-            activity["image_url"] = ""
 
     return result
 
