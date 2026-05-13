@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useMapsLibrary } from '@vis.gl/react-google-maps'
 import { useItinerary, ActivityFull } from '@/Context/ItineraryContext'
 import { ThemeToggle } from '@/components/Button/ThemeToggle'
+import { Map, Clock, Info } from 'lucide-react'
 
 // ── Wikipedia image helper (browser-side, no API key needed) ─────────────────
 
@@ -81,7 +82,9 @@ function usePlacePhoto(
 const PanelContext = createContext<{
   enable: boolean
   setEnable: (v: boolean) => void
-}>({ enable: true, setEnable: () => {} })
+  panelWidth: number
+  setPanelWidth: (w: number) => void
+}>({ enable: true, setEnable: () => {}, panelWidth: 350, setPanelWidth: () => {} })
 
 // ── Buttons ──────────────────────────────────────────────────────────────────
 
@@ -142,6 +145,40 @@ function BackToFormButton() {
   )
 }
 
+// ── Resize Handle ─────────────────────────────────────────────────────────────
+
+function ResizeHandle() {
+  const { panelWidth, setPanelWidth } = useContext(PanelContext)
+  const isDragging = useRef(false)
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    isDragging.current = true
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }
+
+  const onMouseMove = (e: MouseEvent) => {
+    if (!isDragging.current) return
+    const newWidth = Math.max(300, Math.min(800, e.clientX - 16))
+    setPanelWidth(newWidth)
+  }
+
+  const onMouseUp = () => {
+    isDragging.current = false
+    document.removeEventListener('mousemove', onMouseMove)
+    document.removeEventListener('mouseup', onMouseUp)
+  }
+
+  return (
+    <div
+      onMouseDown={onMouseDown}
+      className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-orange-500/30 transition-colors z-30 rounded-r-2xl"
+      title="Drag to resize itinerary"
+    />
+  )
+}
+
 // ── Activity card ─────────────────────────────────────────────────────────────
 
 interface ActivityCardProps {
@@ -186,9 +223,17 @@ function ActivityCard({ activity, isActive, cardRef, onClick, onRemove }: Activi
         <h4 className="text-sm font-semibold text-[#212121] dark:text-white truncate leading-tight">
           {activity.name}
         </h4>
-        <p className="text-xs font-semibold text-[#FF7043]">
-          ${activity.estimated_cost.toLocaleString()}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs font-semibold text-[#FF7043]">
+            ${activity.estimated_cost.toLocaleString()}
+          </p>
+          {activity.opening_hours && (
+            <div className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 italic">
+              <Clock size={10} />
+              <span className="truncate max-w-[80px]">{activity.opening_hours}</span>
+            </div>
+          )}
+        </div>
         <p className="text-xs text-[#616161] dark:text-gray-400 leading-relaxed line-clamp-2">
           {activity.description}
         </p>
@@ -222,13 +267,13 @@ function ActivityCard({ activity, isActive, cardRef, onClick, onRemove }: Activi
 
 // ── Detail panel (shown when a card is active) ────────────────────────────────
 
-function DetailPanel({ activity, onClose }: { activity: ActivityFull; onClose: () => void }) {
+function DetailPanel({ activity, onClose, offset }: { activity: ActivityFull; onClose: () => void; offset: number }) {
   const [imgSrc, onImgError] = usePlacePhoto(activity.name, activity.destination, activity.image_url)
 
   return (
     <aside
       className="absolute top-4 bg-white dark:bg-gray-900 rounded-2xl w-96 shadow-xl overflow-hidden flex flex-col transition-colors duration-300"
-      style={{ left: 'calc(350px + 1.5rem)', maxHeight: '80vh' }}
+      style={{ left: `calc(${offset}px + 1.5rem)`, maxHeight: '80vh' }}
     >
       <div className="relative w-full h-52 bg-gray-100">
         {imgSrc ? (
@@ -258,13 +303,34 @@ function DetailPanel({ activity, onClose }: { activity: ActivityFull; onClose: (
       </div>
 
       <div className="flex flex-col gap-3 p-4 overflow-y-auto custom-scroll">
-        <div>
+        <div className="flex flex-col gap-1">
           <h4 className="text-xl font-semibold text-[#212121] dark:text-white">{activity.name}</h4>
-          <p className="text-sm font-semibold text-[#FF7043] mt-0.5">
-            ${activity.estimated_cost.toLocaleString()}
-          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-sm font-semibold text-[#FF7043]">
+              ${activity.estimated_cost.toLocaleString()}
+            </p>
+            {activity.opening_hours && (
+              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 px-2 py-0.5 rounded-full border border-gray-100 dark:border-gray-700">
+                <Clock size={12} className="text-orange-500" />
+                <span>{activity.opening_hours}</span>
+              </div>
+            )}
+          </div>
         </div>
+
         <p className="text-sm text-[#424242] dark:text-gray-400 leading-relaxed">{activity.description}</p>
+        
+        {activity.important_info && (
+          <div className="mt-2 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-100 dark:border-orange-900/30">
+            <div className="flex items-center gap-2 mb-1 text-[#E64A19] font-semibold text-xs uppercase tracking-wider">
+              <Info size={14} />
+              <span>Need to Know</span>
+            </div>
+            <p className="text-xs text-[#5D4037] dark:text-orange-200/80 leading-relaxed">
+              {activity.important_info}
+            </p>
+          </div>
+        )}
       </div>
     </aside>
   )
@@ -274,6 +340,7 @@ function DetailPanel({ activity, onClose }: { activity: ActivityFull; onClose: (
 
 export default function PanelPage() {
   const [enable, setEnable] = useState(true)
+  const [panelWidth, setPanelWidth] = useState(350)
   const { activities, removeActivity, activeActivity, setActiveActivity } = useItinerary()
 
   const cardRefs = useRef<(HTMLElement | null)[]>([])
@@ -305,7 +372,7 @@ export default function PanelPage() {
   }
 
   return (
-    <PanelContext value={{ enable, setEnable }}>
+    <PanelContext value={{ enable, setEnable, panelWidth, setPanelWidth }}>
       {/* theme toggle — always visible, top-right */}
       <div className="absolute top-4 right-4 z-20">
         <ThemeToggle />
@@ -325,17 +392,27 @@ export default function PanelPage() {
           </div>
 
           <main
-            className="absolute bg-white dark:bg-gray-900 rounded-2xl w-[350px] flex flex-col top-15 left-4 transition-colors duration-300"
-            style={{ height: '80vh' }}
+            className="absolute bg-white dark:bg-gray-900 rounded-2xl flex flex-col top-15 left-4 transition-colors duration-300 shadow-2xl"
+            style={{ height: '80vh', width: panelWidth }}
           >
             <header className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-base font-semibold text-[#212121] dark:text-white">Your Itinerary</h3>
+              <div className="flex items-center gap-2">
+                <div className="bg-orange-100 dark:bg-orange-900/40 p-1.5 rounded-lg text-orange-600 dark:text-orange-400">
+                  <Map size={18} strokeWidth={2.5} />
+                </div>
+                <h3 className="text-lg font-bold tracking-tight text-[#212121] dark:text-white">Your Itinerary</h3>
+              </div>
               <CloseButton />
             </header>
 
             <div className="flex flex-col overflow-y-auto flex-1 custom-scroll">
               {activities.length === 0 ? (
-                <p className="text-sm text-gray-400 dark:text-gray-500 p-4 text-center">No activities yet.</p>
+                <div className="flex flex-col items-center justify-center h-full p-8 text-center gap-3">
+                  <div className="opacity-20">
+                    <Map size={48} />
+                  </div>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">No activities yet. Start by generating an itinerary!</p>
+                </div>
               ) : (
                 activities.map((activity, idx) => (
                   <ActivityCard
@@ -350,11 +427,16 @@ export default function PanelPage() {
               )}
             </div>
 
-            <footer className="flex justify-end p-3 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-sm font-semibold text-[#006064] dark:text-teal-400">
-                Total: ${totalCost.toLocaleString()}
-              </p>
+            <footer className="flex justify-end p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30 rounded-b-2xl">
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">Estimated Budget</span>
+                <p className="text-lg font-bold text-[#006064] dark:text-teal-400">
+                  ${totalCost.toLocaleString()}
+                </p>
+              </div>
             </footer>
+
+            <ResizeHandle />
           </main>
         </>
       )}
@@ -363,6 +445,7 @@ export default function PanelPage() {
         <DetailPanel
           activity={activeActivityFull}
           onClose={() => setActiveActivity(null)}
+          offset={panelWidth}
         />
       )}
     </PanelContext>

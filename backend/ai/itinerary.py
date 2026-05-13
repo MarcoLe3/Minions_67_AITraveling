@@ -26,6 +26,9 @@ class AIDestination(BaseModel):
     necessities: str = Field(..., description="Visas, weather, local tips")
     lat: Optional[float] = Field(None, description="Latitude")
     lng: Optional[float] = Field(None, description="Longitude")
+    search_query: str = Field(..., description="Specific landmark name for image search")
+    opening_hours: str = Field(..., description="Operating hours, e.g. 9 AM - 6 PM or 'Varies'")
+    important_info: str = Field(..., description="Need to know info, e.g. 'Requires advance booking' or 'Best visited in the morning'")
 
 class AIActivity(BaseModel):
     name: str = Field(..., description="Short activity name")
@@ -33,6 +36,9 @@ class AIActivity(BaseModel):
     estimated_cost: int = Field(..., description="Estimated cost in USD as an integer")
     lat: float = Field(..., description="Latitude of the activity location")
     lng: float = Field(..., description="Longitude of the activity location")
+    search_query: str = Field(..., description="Specific landmark name for image search (e.g. 'Golden Gate Bridge')")
+    opening_hours: str = Field(..., description="Operating hours, e.g. 9 AM - 6 PM or 'Varies'")
+    important_info: str = Field(..., description="Need to know info, e.g. 'Requires advance booking' or 'Best visited in the morning'")
 
 class AIDay(BaseModel):
     day: int = Field(..., description="Day number")
@@ -80,14 +86,18 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
         "{\n"
         "  \"destinations\": [\n"
         f"    {{\"name\": \"landmark in {dest_str}\", \"description\": \"2-3 sentences\", "
-        "\"estimated_price\": 0, \"necessities\": \"tips\", \"lat\": 0.0, \"lng\": 0.0}\n"
+        "\"estimated_price\": 0, \"necessities\": \"tips\", \"lat\": 0.0, \"lng\": 0.0, "
+        "\"search_query\": \"Specific Landmark Name\", "
+        "\"opening_hours\": \"hours\", \"important_info\": \"tips\"}}\n"
         "  ],\n"
         "  \"days\": [\n"
         f"    {{\"day\": 1, \"origin\": \"neighbourhood in {dest_str}\", \"origin_lat\": 0.0, \"origin_lng\": 0.0, "
         f"\"destination\": \"attraction in {dest_str}\", \"destination_lat\": 0.0, \"destination_lng\": 0.0, "
         "\"image_query\": \"landmark name\", "
         "\"activities\": ["
-        f"{{\"name\": \"activity\", \"description\": \"1-2 sentences\", \"estimated_cost\": 0, \"lat\": 0.0, \"lng\": 0.0}}"
+        f"{{\"name\": \"activity\", \"description\": \"1-2 sentences\", \"estimated_cost\": 0, \"lat\": 0.0, \"lng\": 0.0, "
+        "\"search_query\": \"Specific Landmark Name\", "
+        "\"opening_hours\": \"hours\", \"important_info\": \"tips\"}}"
         "], \"cost\": 0}\n"
         "  ],\n"
         f"  \"summary\": {{\"total_cost\": 0, \"budget_fit\": \"Yes\"}}\n"
@@ -95,13 +105,17 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
         "Rules (strictly follow):\n"
         f"- ALL locations must be physically inside {dest_str}. No {origin_str}, no airports, no transit.\n"
         "- \"destinations\": exactly 5 items.\n"
-        f"- \"days\": exactly {days} items, one per day.\n"
-        "- Each day's \"activities\": 3 to 5 items, each with name, description, estimated_cost, lat, lng.\n"
-        f"- All lat/lng must be real GPS coordinates inside {dest_str}.\n"
+        "- \"days\": exactly {days} items, one per day.\n"
+        "- Each day's \"activities\": 2 to 3 items ONLY.\n"
+        "- All descriptions: MAXIMUM 15 words. BE EXTREMELY CONCISE.\n"
+        f"- All lat/lng MUST be the exact, real GPS coordinates of the specific landmark. DO NOT use the city center or destination's general coordinates for individual activities.\n"
+        "- Every activity must have its own accurate coordinates. If two activities are at the same place, they can share, but they must be AT that place.\n"
+        "- Each \"search_query\" MUST be a specific, descriptive landmark name AND include the city name (e.g., \"Golden Gate Bridge Visitor Center, San Francisco\").\n"
         "- All cost fields must be integers.\n"
         f"- \"budget_fit\": \"Yes\" if total_cost <= {budget}, otherwise \"No\".\n"
         "- Do NOT add any key other than \"destinations\", \"days\", \"summary\" at the top level.\n"
-        "- Output the JSON only — no markdown, no explanation."
+        "- Output the JSON only — no markdown, no explanation.\n"
+        "- BE BRUTALLY CONCISE. Short descriptions are mandatory to prevent JSON truncation."
     )
 
     # 2. AI Call + parse with one automatic retry on validation failure
@@ -128,12 +142,12 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
     #    are the guaranteed fallback so an image always appears.
     tasks: list[tuple[dict, str, str]] = []
     for dest in result.get("destinations", []):
-        tasks.append((dest, dest["name"], dest_str))
+        tasks.append((dest, dest.get("search_query") or dest["name"], dest_str))
     for day in result.get("days", []):
         query = day.get("image_query") or day.get("destination") or "travel"
         tasks.append((day, query, dest_str))
         for activity in day.get("activities", []):
-            tasks.append((activity, activity["name"], dest_str))
+            tasks.append((activity, activity.get("search_query") or activity["name"], dest_str))
 
     def _fetch(item: tuple[dict, str, str]):
         obj, name, ctx = item
@@ -200,8 +214,13 @@ def _get_image_url(name: str, destination: str = "") -> str:
     url = _get_wiki_image(name, destination)
     if url:
         return url
-    clean = _clean_image_query(name).replace(" ", ",").lower()
-    return f"https://loremflickr.com/800/600/{clean}"
+    # Second attempt: just the name (sometimes destination name confuses Wikipedia)
+    url = _get_wiki_image(name)
+    if url:
+        return url
+    
+    # Final fallback: A high-quality, guaranteed generic travel photo (no cats)
+    return "https://images.unsplash.com/photo-1500835556837-99ac94a94552?auto=format&fit=crop&w=800&q=60"
 
 
 def _call_hf_inference(prompt: str) -> str:
@@ -215,7 +234,7 @@ def _call_hf_inference(prompt: str) -> str:
             {"role": "system", "content": "You are a professional travel agent that only outputs valid JSON."},
             {"role": "user", "content": prompt}
         ],
-        "max_tokens": 6000,
+        "max_tokens": 16000,
         "temperature": 0.3,
         "response_format": {"type": "json_object"}
     }

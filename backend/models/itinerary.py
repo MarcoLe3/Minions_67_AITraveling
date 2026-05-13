@@ -23,6 +23,8 @@ class DestinationDetail(BaseModel):
     description: str
     estimated_price: int
     necessities: str
+    opening_hours: Optional[str] = None
+    important_info: Optional[str] = None
     lat: Optional[float] = None
     lng: Optional[float] = None
 
@@ -32,6 +34,8 @@ class ActivityDetail(BaseModel):
     estimated_cost: int
     lat: Optional[float] = None
     lng: Optional[float] = None
+    opening_hours: Optional[str] = None
+    important_info: Optional[str] = None
     image_url: str = ""
 
 class DayDetail(BaseModel):
