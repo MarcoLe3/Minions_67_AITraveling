@@ -71,37 +71,56 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
     origin_str = ", ".join(origin_names)
 
     prompt = (
-        f"Generate a {days}-day itinerary of things to do in {dest_str} with a total budget of ${budget}.\n"
-        f"Context: the traveler is flying in from {origin_str}, but the itinerary covers ONLY activities and attractions inside {dest_str}.\n"
-        "Output ONLY a JSON object with this EXACT structure:\n"
+        f"You are a travel planner. Create a {days}-day sightseeing itinerary for {dest_str} "
+        f"(traveler arrives from {origin_str}, spending ${budget} total).\n\n"
+        "Respond with ONLY a JSON object. The JSON must have EXACTLY these three top-level keys — "
+        "no more, no fewer: \"destinations\", \"days\", \"summary\".\n\n"
+        "Required structure:\n"
         "{\n"
-        "  \"destinations\": [{\"name\": \"...\", \"description\": \"...\", \"estimated_price\": 0, \"necessities\": \"...\", \"lat\": 0.0, \"lng\": 0.0}],\n"
-        "  \"days\": [\n"
-        f"    {{\"day\": 1, \"origin\": \"Specific neighbourhood or landmark in {dest_str}\", \"origin_lat\": 0.0, \"origin_lng\": 0.0, "
-        f"\"destination\": \"Specific attraction in {dest_str}\", \"destination_lat\": 0.0, \"destination_lng\": 0.0, \"image_query\": \"...\", "
-        "\"activities\": [{\"name\": \"Activity Name\", \"description\": \"1-2 sentence description.\", \"estimated_cost\": 0, \"lat\": 0.0, \"lng\": 0.0}], \"cost\": 0}\n"
+        "  \"destinations\": [\n"
+        f"    {{\"name\": \"landmark in {dest_str}\", \"description\": \"2-3 sentences\", "
+        "\"estimated_price\": 0, \"necessities\": \"tips\", \"lat\": 0.0, \"lng\": 0.0}\n"
         "  ],\n"
-        "  \"summary\": {\"total_cost\": 0, \"budget_fit\": \"Yes/No\"}\n"
-        "}\n"
-        "RULES:\n"
-        f"1. Every activity, location, and coordinate MUST be physically located in {dest_str}. "
-        f"Do NOT include anything from {origin_str}, airports, flights, or transit.\n"
-        f"2. 'destinations' list: exactly 5 unique tourist attractions or landmarks inside {dest_str}.\n"
-        f"3. 'days' list: exactly {days} entries. Each day is a full day of sightseeing within {dest_str}.\n"
-        "4. Each day's 'activities': array of 3-5 objects — name, description (1-2 sentences), estimated_cost (integer USD), lat, lng.\n"
-        f"5. All coordinates must be real, accurate GPS coordinates for named locations inside {dest_str}.\n"
-        "6. 'summary' MUST be a top-level key.\n"
-        "7. All costs and coordinates must be numeric.\n"
-        "8. Output NO text other than the JSON object."
+        "  \"days\": [\n"
+        f"    {{\"day\": 1, \"origin\": \"neighbourhood in {dest_str}\", \"origin_lat\": 0.0, \"origin_lng\": 0.0, "
+        f"\"destination\": \"attraction in {dest_str}\", \"destination_lat\": 0.0, \"destination_lng\": 0.0, "
+        "\"image_query\": \"landmark name\", "
+        "\"activities\": ["
+        f"{{\"name\": \"activity\", \"description\": \"1-2 sentences\", \"estimated_cost\": 0, \"lat\": 0.0, \"lng\": 0.0}}"
+        "], \"cost\": 0}\n"
+        "  ],\n"
+        f"  \"summary\": {{\"total_cost\": 0, \"budget_fit\": \"Yes\"}}\n"
+        "}\n\n"
+        "Rules (strictly follow):\n"
+        f"- ALL locations must be physically inside {dest_str}. No {origin_str}, no airports, no transit.\n"
+        "- \"destinations\": exactly 5 items.\n"
+        f"- \"days\": exactly {days} items, one per day.\n"
+        "- Each day's \"activities\": 3 to 5 items, each with name, description, estimated_cost, lat, lng.\n"
+        f"- All lat/lng must be real GPS coordinates inside {dest_str}.\n"
+        "- All cost fields must be integers.\n"
+        f"- \"budget_fit\": \"Yes\" if total_cost <= {budget}, otherwise \"No\".\n"
+        "- Do NOT add any key other than \"destinations\", \"days\", \"summary\" at the top level.\n"
+        "- Output the JSON only — no markdown, no explanation."
     )
 
-    # 2. AI Call
-    raw_ai_text = _call_hf_inference(prompt)
+    # 2. AI Call + parse with one automatic retry on validation failure
+    last_error: Exception = RuntimeError("No attempts made")
+    result = None
+    for attempt in range(2):
+        try:
+            raw_ai_text = _call_hf_inference(prompt)
+            result = _parse_itinerary(raw_ai_text)
+            break  # success — exit retry loop
+        except RuntimeError as e:
+            last_error = e
+            print(f"Attempt {attempt + 1}/2 failed: {e}")
+            if attempt == 0:
+                print("Retrying with a fresh AI call...")
 
-    # 3. Parsing & Cleaning
-    result = _parse_itinerary(raw_ai_text)
-    
-    print("Structured Result:", result)  # Debugging output to verify parsing
+    if result is None:
+        raise last_error
+
+    print("Structured Result:", result)
     
     # 4. Add images for destinations and days
     for dest in result.get("destinations", []):
@@ -134,7 +153,7 @@ def _call_hf_inference(prompt: str) -> str:
             {"role": "system", "content": "You are a professional travel agent that only outputs valid JSON."},
             {"role": "user", "content": prompt}
         ],
-        "max_tokens": 4096,
+        "max_tokens": 6000,
         "temperature": 0.3,
         "response_format": {"type": "json_object"}
     }

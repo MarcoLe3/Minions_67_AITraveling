@@ -92,17 +92,13 @@ export default function MainMap() {
             ) : null
           )}
 
-          {/* Per-day intra-city routes and activity pins */}
+          {/* Per-day activity pins and connector lines */}
           {days.map((day: any, index: number) => (
             <MapRenderDirections
               key={index}
               index={index + 1}
               originLocation={day.origin}
-              originLat={day.origin_lat}
-              originLng={day.origin_lng}
               destinationLocation={day.destination}
-              destinationLat={day.destination_lat}
-              destinationLng={day.destination_lng}
               activities={activitiesByDay[index] ?? []}
             />
           ))}
