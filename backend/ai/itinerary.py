@@ -27,8 +27,8 @@ class AIDestination(BaseModel):
     lat: Optional[float] = Field(None, description="Latitude")
     lng: Optional[float] = Field(None, description="Longitude")
     search_query: str = Field(..., description="Specific landmark name for image search")
-    opening_hours: str = Field(..., description="Operating hours, e.g. 9 AM - 6 PM or 'Varies'")
-    important_info: str = Field(..., description="Need to know info, e.g. 'Requires advance booking' or 'Best visited in the morning'")
+    opening_hours: str = Field("Varies", description="Operating hours, e.g. 9 AM - 6 PM or 'Varies'")
+    important_info: str = Field("N/A", description="Need to know info, e.g. 'Requires advance booking' or 'Best visited in the morning'")
 
 class AIActivity(BaseModel):
     name: str = Field(..., description="Short activity name")
@@ -37,8 +37,8 @@ class AIActivity(BaseModel):
     lat: float = Field(..., description="Latitude of the activity location")
     lng: float = Field(..., description="Longitude of the activity location")
     search_query: str = Field(..., description="Specific landmark name for image search (e.g. 'Golden Gate Bridge')")
-    opening_hours: str = Field(..., description="Operating hours, e.g. 9 AM - 6 PM or 'Varies'")
-    important_info: str = Field(..., description="Need to know info, e.g. 'Requires advance booking' or 'Best visited in the morning'")
+    opening_hours: str = Field("Varies", description="Operating hours, e.g. 9 AM - 6 PM or 'Varies'")
+    important_info: str = Field("N/A", description="Need to know info, e.g. 'Requires advance booking' or 'Best visited in the morning'")
 
 class AIDay(BaseModel):
     day: int = Field(..., description="Day number")
@@ -107,7 +107,7 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
         "- \"destinations\": exactly 5 items.\n"
         "- \"days\": exactly {days} items, one per day.\n"
         "- Each day's \"activities\": 2 to 3 items ONLY.\n"
-        "- All descriptions: MAXIMUM 15 words. BE EXTREMELY CONCISE.\n"
+        "- All descriptions: 2 to 3 sentences. Include what the activity is, what to do there, and any critical 'need to know' info (like booking) and 'hours' for museums/stores.\n"
         f"- All lat/lng MUST be the exact, real GPS coordinates of the specific landmark. DO NOT use the city center or destination's general coordinates for individual activities.\n"
         "- Every activity must have its own accurate coordinates. If two activities are at the same place, they can share, but they must be AT that place.\n"
         "- Each \"search_query\" MUST be a specific, descriptive landmark name AND include the city name (e.g., \"Golden Gate Bridge Visitor Center, San Francisco\").\n"
@@ -115,7 +115,7 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
         f"- \"budget_fit\": \"Yes\" if total_cost <= {budget}, otherwise \"No\".\n"
         "- Do NOT add any key other than \"destinations\", \"days\", \"summary\" at the top level.\n"
         "- Output the JSON only — no markdown, no explanation.\n"
-        "- BE BRUTALLY CONCISE. Short descriptions are mandatory to prevent JSON truncation."
+        "- Ensure the JSON is complete and valid. High token limit (16,000) is provided for detailed responses."
     )
 
     # 2. AI Call + parse with one automatic retry on validation failure

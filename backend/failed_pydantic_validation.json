@@ -1,259 +1,153 @@
 {
   "destinations": [
     {
-      "name": "Golden Gate Bridge",
-      "description": "Iconic suspension bridge in San Francisco.",
+      "name": "Statue of Liberty",
+      "description": "The Statue of Liberty is a symbol of freedom and democracy. It was a gift from France to the United States and was dedicated in 1886. Visitors can take a ferry to Liberty Island to see the statue up close.",
       "estimated_price": 0,
-      "necessities": "wear layers",
-      "lat": 37.7749,
-      "lng": -122.4194,
-      "search_query": "Golden Gate Bridge",
-      "opening_hours": "5am-10pm",
-      "important_info": "avoid during rush hour"
+      "necessities": "book tickets in advance, wear comfortable shoes",
+      "lat": 40.6933,
+      "lng": -74.0463,
+      "search_query": "Statue of Liberty, New York",
+      "opening_hours": "9:30 AM - 5:00 PM"
     },
     {
-      "name": "Alcatraz Island",
-      "description": "Former maximum-security prison turned national park.",
+      "name": "Central Park",
+      "description": "Central Park is an 843-acre public park in the heart of Manhattan. It features several lakes, gardens, and walking paths. Visitors can rent bikes, take a boat ride, or simply relax in the park.",
       "estimated_price": 0,
-      "necessities": "wear layers",
-      "lat": 37.8193,
-      "lng": -122.4233,
-      "search_query": "Alcatraz Island",
-      "opening_hours": "9am-5pm",
-      "important_info": "book tickets in advance"
+      "necessities": "wear comfortable shoes, bring snacks and water",
+      "lat": 40.7859,
+      "lng": -73.9654,
+      "search_query": "Central Park, New York",
+      "opening_hours": "6:00 AM - 1:00 AM"
     },
     {
-      "name": "Fisherman's Wharf",
-      "description": "Popular waterfront district with seafood restaurants.",
+      "name": "Metropolitan Museum of Art",
+      "description": "The Metropolitan Museum of Art is one of the world's largest and most famous museums. It features a vast collection of art and artifacts from around the world, including works by Monet, Van Gogh, and Vermeer. Visitors can spend hours exploring the museum's galleries and exhibitions.",
       "estimated_price": 0,
-      "necessities": "wear layers",
-      "lat": 37.8085,
-      "lng": -122.4074,
-      "search_query": "Fisherman's Wharf",
-      "opening_hours": "24/7",
-      "important_info": "try fresh seafood"
+      "necessities": "book tickets in advance, wear comfortable shoes",
+      "lat": 40.7794,
+      "lng": -73.9632,
+      "search_query": "The Metropolitan Museum of Art, New York",
+      "opening_hours": "10:00 AM - 5:30 PM"
     },
     {
-      "name": "Lombard Street",
-      "description": "Winding street with beautiful views of the city.",
+      "name": "9/11 Memorial & Museum",
+      "description": "The 9/11 Memorial & Museum is a tribute to the victims of the 9/11 attacks. The memorial features two large reflecting pools surrounded by the names of those who were killed. The museum tells the story of that day through artifacts and personal stories.",
       "estimated_price": 0,
-      "necessities": "wear layers",
-      "lat": 37.7933,
-      "lng": -122.4194,
-      "search_query": "Lombard Street",
-      "opening_hours": "24/7",
-      "important_info": "avoid during rush hour"
+      "necessities": "book tickets in advance, be prepared for emotional content",
+      "lat": 40.7069,
+      "lng": -74.0123,
+      "search_query": "9/11 Memorial & Museum, New York",
+      "opening_hours": "9:00 AM - 5:00 PM"
     },
     {
-      "name": "Chinatown",
-      "description": "Vibrant neighborhood with Chinese culture and cuisine.",
+      "name": "Top of the Rock Observation Deck",
+      "description": "The Top of the Rock Observation Deck is a popular spot to take in the views of the city. Visitors can see the Empire State Building, the Chrysler Building, and other iconic landmarks from 70 floors up. It's a great spot to take photos and enjoy the sunset.",
       "estimated_price": 0,
-      "necessities": "wear layers",
-      "lat": 37.7855,
-      "lng": -122.4053,
-      "search_query": "Chinatown",
-      "opening_hours": "24/7",
-      "important_info": "try dim sum"
+      "necessities": "book tickets in advance, wear comfortable shoes",
+      "lat": 40.7484,
+      "lng": -73.9857,
+      "search_query": "Top of the Rock Observation Deck, New York",
+      "opening_hours": "8:00 AM - 12:00 AM"
     }
   ],
   "days": [
     {
       "day": 1,
-      "origin": "Union Square",
-      "origin_lat": 37.7859,
-      "origin_lng": -122.4064,
-      "destination": "Golden Gate Bridge",
-      "destination_lat": 37.7749,
-      "destination_lng": -122.4194,
-      "image_query": "Golden Gate Bridge",
+      "origin": "Times Square",
+      "origin_lat": 40.7589,
+      "origin_lng": -73.9851,
+      "destination": "Statue of Liberty",
+      "destination_lat": 40.6933,
+      "destination_lng": -74.0463,
+      "image_query": "Statue of Liberty, New York",
       "activities": [
         {
-          "name": "Walk across the bridge",
-          "description": "Take in the breathtaking views of the city.",
-          "estimated_cost": 0,
-          "lat": 37.7749,
-          "lng": -122.4194,
-          "search_query": "Golden Gate Bridge",
-          "opening_hours": "5am-10pm",
-          "important_info": "avoid during rush hour"
+          "name": "Statue of Liberty Ferry",
+          "description": "Take a ferry to Liberty Island to see the Statue of Liberty up close. Be sure to book tickets in advance and wear comfortable shoes.",
+          "estimated_cost": 18.5,
+          "lat": 40.6933,
+          "lng": -74.0463,
+          "search_query": "Statue of Liberty Ferry, New York",
+          "opening_hours": "9:30 AM - 5:00 PM"
         },
         {
-          "name": "Visit the bridge's southern end",
-          "description": "Take a closer look at the bridge's architecture.",
+          "name": "Liberty Island Museum",
+          "description": "Visit the museum on Liberty Island to learn more about the history of the Statue of Liberty. Be prepared for emotional content and wear comfortable shoes.",
           "estimated_cost": 0,
-          "lat": 37.7749,
-          "lng": -122.4194,
-          "search_query": "Golden Gate Bridge",
-          "opening_hours": "5am-10pm",
-          "important_info": "avoid during rush hour"
+          "lat": 40.6933,
+          "lng": -74.0463,
+          "search_query": "Liberty Island Museum, New York",
+          "opening_hours": "9:30 AM - 5:00 PM"
         }
-      ]
+      ],
+      "cost": 18.5
     },
     {
       "day": 2,
-      "origin": "Golden Gate Bridge",
-      "origin_lat": 37.7749,
-      "origin_lng": -122.4194,
-      "destination": "Alcatraz Island",
-      "destination_lat": 37.8193,
-      "destination_lng": -122.4233,
-      "image_query": "Alcatraz Island",
+      "origin": "Statue of Liberty",
+      "origin_lat": 40.6933,
+      "origin_lng": -74.0463,
+      "destination": "Central Park",
+      "destination_lat": 40.7859,
+      "destination_lng": -73.9654,
+      "image_query": "Central Park, New York",
       "activities": [
         {
-          "name": "Take a ferry to the island",
-          "description": "Learn about the prison's history and former inmates.",
-          "estimated_cost": 0,
-          "lat": 37.8193,
-          "lng": -122.4233,
-          "search_query": "Alcatraz Island",
-          "opening_hours": "9am-5pm",
-          "important_info": "book tickets in advance"
+          "name": "Rent a Bike in Central Park",
+          "description": "Rent a bike and ride through Central Park. Be sure to wear a helmet and follow park rules.",
+          "estimated_cost": 20.0,
+          "lat": 40.7859,
+          "lng": -73.9654,
+          "search_query": "Rent a Bike in Central Park, New York",
+          "opening_hours": "6:00 AM - 1:00 AM"
         },
         {
-          "name": "Explore the island's cellblock",
-          "description": "See where famous inmates like Al Capone were held.",
-          "estimated_cost": 0,
-          "lat": 37.8193,
-          "lng": -122.4233,
-          "search_query": "Alcatraz Island",
-          "opening_hours": "9am-5pm",
-          "important_info": "book tickets in advance"
+          "name": "Boat Ride in Central Park",
+          "description": "Take a boat ride on the lake in Central Park. Be sure to wear comfortable shoes and bring snacks and water.",
+          "estimated_cost": 15.0,
+          "lat": 40.7859,
+          "lng": -73.9654,
+          "search_query": "Boat Ride in Central Park, New York",
+          "opening_hours": "6:00 AM - 1:00 AM"
         }
-      ]
+      ],
+      "cost": 35.0
     },
     {
       "day": 3,
-      "origin": "Alcatraz Island",
-      "origin_lat": 37.8193,
-      "origin_lng": -122.4233,
-      "destination": "Fisherman's Wharf",
-      "destination_lat": 37.8085,
-      "destination_lng": -122.4074,
-      "image_query": "Fisherman's Wharf",
+      "origin": "Central Park",
+      "origin_lat": 40.7859,
+      "origin_lng": -73.9654,
+      "destination": "The Metropolitan Museum of Art",
+      "destination_lat": 40.7794,
+      "destination_lng": -73.9632,
+      "image_query": "The Metropolitan Museum of Art, New York",
       "activities": [
         {
-          "name": "Try fresh seafood",
-          "description": "Sample the city's famous seafood cuisine.",
-          "estimated_cost": 50,
-          "lat": 37.8085,
-          "lng": -122.4074,
-          "search_query": "Fisherman's Wharf",
-          "opening_hours": "24/7",
-          "important_info": "try fresh seafood"
+          "name": "Visit the Metropolitan Museum of Art",
+          "description": "Spend the day exploring the galleries and exhibitions at the Metropolitan Museum of Art. Be sure to book tickets in advance and wear comfortable shoes.",
+          "estimated_cost": 25.0,
+          "lat": 40.7794,
+          "lng": -73.9632,
+          "search_query": "The Metropolitan Museum of Art, New York",
+          "opening_hours": "10:00 AM - 5:30 PM"
         },
         {
-          "name": "Explore the wharf's shops and stalls",
-          "description": "Find unique souvenirs and local goods.",
-          "estimated_cost": 20,
-          "lat": 37.8085,
-          "lng": -122.4074,
-          "search_query": "Fisherman's Wharf",
-          "opening_hours": "24/7",
-          "important_info": "try fresh seafood"
-        }
-      ]
-    },
-    {
-      "day": 4,
-      "origin": "Fisherman's Wharf",
-      "origin_lat": 37.8085,
-      "origin_lng": -122.4074,
-      "destination": "Lombard Street",
-      "destination_lat": 37.7933,
-      "destination_lng": -122.4194,
-      "image_query": "Lombard Street",
-      "activities": [
-        {
-          "name": "Walk down the winding street",
-          "description": "Take in the beautiful views of the city.",
+          "name": "See the Temple of Dendur",
+          "description": "Visit the Temple of Dendur, a ancient Egyptian temple that was a gift to the museum. Be sure to book tickets in advance and wear comfortable shoes.",
           "estimated_cost": 0,
-          "lat": 37.7933,
-          "lng": -122.4194,
-          "search_query": "Lombard Street",
-          "opening_hours": "24/7",
-          "important_info": "avoid during rush hour"
-        },
-        {
-          "name": "Visit the street's scenic overlook",
-          "description": "Take a photo with the city skyline.",
-          "estimated_cost": 0,
-          "lat": 37.7933,
-          "lng": -122.4194,
-          "search_query": "Lombard Street",
-          "opening_hours": "24/7",
-          "important_info": "avoid during rush hour"
+          "lat": 40.7794,
+          "lng": -73.9632,
+          "search_query": "Temple of Dendur, New York",
+          "opening_hours": "10:00 AM - 5:30 PM"
         }
-      ]
-    },
-    {
-      "day": 4,
-      "origin": "Lombard Street",
-      "origin_lat": 37.7933,
-      "origin_lng": -122.4194,
-      "destination": "Chinatown",
-      "destination_lat": 37.7855,
-      "destination_lng": -122.4053,
-      "image_query": "Chinatown",
-      "activities": [
-        {
-          "name": "Explore the neighborhood's shops and restaurants",
-          "description": "Find unique souvenirs and local cuisine.",
-          "estimated_cost": 30,
-          "lat": 37.7855,
-          "lng": -122.4053,
-          "search_query": "Chinatown",
-          "opening_hours": "24/7",
-          "important_info": "try dim sum"
-        }
-      ]
-    },
-    {
-      "day": 4,
-      "origin": "Chinatown",
-      "origin_lat": 37.7855,
-      "origin_lng": -122.4053,
-      "destination": "Union Square",
-      "destination_lat": 37.7859,
-      "destination_lng": -122.4064,
-      "image_query": "Union Square",
-      "activities": [
-        {
-          "name": "Visit the square's shops and restaurants",
-          "description": "Find unique souvenirs and local cuisine.",
-          "estimated_cost": 40,
-          "lat": 37.7859,
-          "lng": -122.4064,
-          "search_query": "Union Square",
-          "opening_hours": "24/7",
-          "important_info": "try local cuisine"
-        }
-      ]
-    },
-    {
-      "day": 4,
-      "origin": "Union Square",
-      "origin_lat": 37.7859,
-      "origin_lng": -122.4064,
-      "destination": "Union Square",
-      "destination_lat": 37.7859,
-      "destination_lng": -122.4064,
-      "image_query": "Union Square",
-      "activities": [
-        {
-          "name": "Visit the square's shops and restaurants",
-          "description": "Find unique souvenirs and local cuisine.",
-          "estimated_cost": 40,
-          "lat": 37.7859,
-          "lng": -122.4064,
-          "search_query": "Union Square",
-          "opening_hours": "24/7",
-          "important_info": "try local cuisine"
-        }
-      ]
+      ],
+      "cost": 25.0
     }
   ],
   "summary": {
-    "total_cost": 180,
+    "total_cost": 78.5,
     "budget_fit": "Yes"
   }
 }
