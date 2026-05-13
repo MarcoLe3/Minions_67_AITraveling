@@ -1,5 +1,6 @@
 import DestinationForm from "@/components/Form/DestinationForm.tsx"
 import { RecommendCard } from "@/components/Card/RecommendCard.tsx"
+import { ThemeToggle } from "@/components/Button/ThemeToggle.tsx"
 import { MapPin, Sparkles, TrendingUp, Clock } from "lucide-react"
 
 const stats = [
@@ -22,6 +23,11 @@ export default async function Home() {
       >
         {/* gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/25 to-black/60 pointer-events-none" />
+
+        {/* theme toggle — top right */}
+        <div className="absolute top-5 right-5 z-20">
+          <ThemeToggle />
+        </div>
 
         {/* hero content */}
         <div className="relative z-10 flex flex-col items-center gap-8 px-6 text-center max-w-3xl">
@@ -49,19 +55,19 @@ export default async function Home() {
       </section>
 
       {/* ── Stats strip ──────────────────────────────────────── */}
-      <section aria-label="Key stats" className="w-full bg-white border-y border-gray-100 py-12">
+      <section aria-label="Key stats" className="w-full bg-white dark:bg-gray-900 border-y border-gray-100 dark:border-gray-800 py-12 transition-colors duration-300">
         <ul className="flex justify-around items-center max-w-4xl mx-auto list-none gap-6 flex-wrap">
           {stats.map(({ value, label, icon: Icon }, i) => (
             <li key={label} className="flex items-center gap-4">
-              <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                <Icon size={20} className="text-blue-500" />
+              <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                <Icon size={20} className="text-blue-500 dark:text-blue-400" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900 leading-none">{value}</div>
-                <div className="text-sm text-gray-400 mt-0.5">{label}</div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white leading-none">{value}</div>
+                <div className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">{label}</div>
               </div>
               {i < stats.length - 1 && (
-                <div className="hidden md:block w-px h-10 bg-gray-200 ml-4" />
+                <div className="hidden md:block w-px h-10 bg-gray-200 dark:bg-gray-700 ml-4" />
               )}
             </li>
           ))}
@@ -69,14 +75,14 @@ export default async function Home() {
       </section>
 
       {/* ── Trips we recommend ───────────────────────────────── */}
-      <section aria-label="Recommended destinations" className="w-full flex flex-col items-center gap-12 py-24 px-6 bg-white">
+      <section aria-label="Recommended destinations" className="w-full flex flex-col items-center gap-12 py-24 px-6 bg-white dark:bg-gray-950 transition-colors duration-300">
         <div className="flex flex-col items-center gap-4 text-center max-w-xl">
-          <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-blue-500 font-semibold bg-blue-50 px-3 py-1.5 rounded-full">
+          <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-blue-500 dark:text-blue-400 font-semibold bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-full">
             <Sparkles size={12} />
             Handpicked for you
           </span>
-          <h2 className="text-5xl font-bold text-gray-900 leading-tight">Trips we recommend</h2>
-          <p className="text-lg text-gray-400 leading-relaxed">
+          <h2 className="text-5xl font-bold text-gray-900 dark:text-white leading-tight">Trips we recommend</h2>
+          <p className="text-lg text-gray-400 dark:text-gray-500 leading-relaxed">
             Smart Travel puts you in control — connect destination data, real-time
             pricing, and currency shifts to plan and book your entire trip.
           </p>

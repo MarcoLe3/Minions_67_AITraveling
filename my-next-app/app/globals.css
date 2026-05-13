@@ -2,6 +2,9 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Override Tailwind v4's default media-query dark variant with class-based */
+@variant dark (&:where(.dark, .dark *));
+
 @utility custom-scroll {
   scrollbar-color: #9e9e9e transparent;
 

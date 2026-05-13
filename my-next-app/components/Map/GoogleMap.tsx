@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import MapRenderDirections from "@/components/Map/MapLines"
 import JourneyRoute from "@/components/Map/JourneyRoute"
 import { useItinerary, Journey } from "@/Context/ItineraryContext"
+import { useTheme } from "@/Context/ThemeContext"
 
 function MapPanToActivity() {
   const map = useMap()
@@ -32,17 +33,13 @@ function MapFitJourneys() {
     })
     if (bounds.isEmpty()) return
 
-    // Pad left to clear the 350px itinerary panel, generous top/bottom for the arc bulge
     const padding = { top: 100, right: 80, bottom: 80, left: 420 }
 
-    // fitBounds before tiles load can be overridden by the map's initial render.
-    // Wait for the first 'idle' event so the viewport is fully settled.
     const listener = map.addListener('idle', () => {
       map.fitBounds(bounds, padding)
       google.maps.event.removeListener(listener)
     })
 
-    // Also call immediately for cases where the map is already idle
     map.fitBounds(bounds, padding)
 
     return () => google.maps.event.removeListener(listener)
@@ -54,6 +51,7 @@ function MapFitJourneys() {
 export default function MainMap() {
   const mapId = process.env.NEXT_PUBLIC_MAP_ID
   const { activities, days, journeys } = useItinerary()
+  const { isDark } = useTheme()
 
   const activitiesByDay = days.map((_: any, dayIdx: number) =>
     activities.filter(a => a.dayIndex === dayIdx)
@@ -70,12 +68,12 @@ export default function MainMap() {
         defaultCenter={defaultCenter}
         defaultZoom={5}
         mapId={mapId}
+        colorScheme={isDark ? 'DARK' : 'LIGHT'}
         disableDefaultUI={true}
       >
         <MapPanToActivity />
         <MapFitJourneys />
 
-        {/* Intercity journey arcs (e.g. London → Paris) */}
         {journeys.map((j: Journey, i: number) =>
           j.origin_lat && j.origin_lng && j.destination_lat && j.destination_lng ? (
             <JourneyRoute
@@ -90,7 +88,6 @@ export default function MainMap() {
           ) : null
         )}
 
-        {/* Per-day activity pins and connector lines */}
         {days.map((day: any, index: number) => (
           <MapRenderDirections
             key={index}

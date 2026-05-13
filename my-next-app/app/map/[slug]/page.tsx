@@ -4,6 +4,7 @@ import { useState, useContext, createContext, useMemo, useEffect, useRef } from 
 import Image from 'next/image'
 import { useMapsLibrary } from '@vis.gl/react-google-maps'
 import { useItinerary, ActivityFull } from '@/Context/ItineraryContext'
+import { ThemeToggle } from '@/components/Button/ThemeToggle'
 
 // ── Google Places photo hook ──────────────────────────────────────────────────
 
@@ -114,9 +115,11 @@ function ActivityCard({ activity, isActive, cardRef, onClick, onRemove }: Activi
       ref={cardRef}
       onClick={onClick}
       className={`
-        flex gap-3 w-full p-3 cursor-pointer border-b border-gray-100
-        hover:bg-[#f5f5f5] transition-colors
-        ${isActive ? 'bg-[#FFF3E0]' : 'bg-white'}
+        flex gap-3 w-full p-3 cursor-pointer border-b border-gray-100 dark:border-gray-700
+        transition-colors
+        ${isActive
+          ? 'bg-[#FFF3E0] dark:bg-orange-900/30 hover:bg-[#ffe8c4] dark:hover:bg-orange-900/40'
+          : 'bg-white dark:bg-gray-900 hover:bg-[#f5f5f5] dark:hover:bg-gray-800'}
       `}
     >
       {/* Number badge */}
@@ -135,13 +138,13 @@ function ActivityCard({ activity, isActive, cardRef, onClick, onRemove }: Activi
 
       {/* Text content */}
       <div className="flex flex-col flex-1 min-w-0 gap-0.5">
-        <h4 className="text-sm font-semibold text-[#212121] truncate leading-tight">
+        <h4 className="text-sm font-semibold text-[#212121] dark:text-white truncate leading-tight">
           {activity.name}
         </h4>
         <p className="text-xs font-semibold text-[#FF7043]">
           ${activity.estimated_cost.toLocaleString()}
         </p>
-        <p className="text-xs text-[#616161] leading-relaxed line-clamp-2">
+        <p className="text-xs text-[#616161] dark:text-gray-400 leading-relaxed line-clamp-2">
           {activity.description}
         </p>
       </div>
@@ -179,7 +182,7 @@ function DetailPanel({ activity, onClose }: { activity: ActivityFull; onClose: (
 
   return (
     <aside
-      className="absolute top-4 bg-white rounded-2xl w-96 shadow-xl overflow-hidden flex flex-col"
+      className="absolute top-4 bg-white dark:bg-gray-900 rounded-2xl w-96 shadow-xl overflow-hidden flex flex-col transition-colors duration-300"
       style={{ left: 'calc(350px + 1.5rem)', maxHeight: '80vh' }}
     >
       <div className="relative w-full h-52 bg-gray-100">
@@ -210,12 +213,12 @@ function DetailPanel({ activity, onClose }: { activity: ActivityFull; onClose: (
 
       <div className="flex flex-col gap-3 p-4 overflow-y-auto custom-scroll">
         <div>
-          <h4 className="text-xl font-semibold text-[#212121]">{activity.name}</h4>
+          <h4 className="text-xl font-semibold text-[#212121] dark:text-white">{activity.name}</h4>
           <p className="text-sm font-semibold text-[#FF7043] mt-0.5">
             ${activity.estimated_cost.toLocaleString()}
           </p>
         </div>
-        <p className="text-sm text-[#424242] leading-relaxed">{activity.description}</p>
+        <p className="text-sm text-[#424242] dark:text-gray-400 leading-relaxed">{activity.description}</p>
       </div>
     </aside>
   )
@@ -257,6 +260,11 @@ export default function PanelPage() {
 
   return (
     <PanelContext value={{ enable, setEnable }}>
+      {/* theme toggle — always visible, top-right */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
+
       {!enable && (
         <div className="absolute top-4 left-4 flex flex-col gap-1">
           <BackToFormButton />
@@ -270,17 +278,18 @@ export default function PanelPage() {
             <BackToFormButton />
           </div>
 
-          <main className="absolute bg-white rounded-2xl w-[350px] flex flex-col top-15 left-4"
+          <main
+            className="absolute bg-white dark:bg-gray-900 rounded-2xl w-[350px] flex flex-col top-15 left-4 transition-colors duration-300"
             style={{ height: '80vh' }}
           >
-            <header className="flex justify-between items-center p-4 border-b border-gray-200">
-              <h3 className="text-base font-semibold text-[#212121]">Your Itinerary</h3>
+            <header className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-base font-semibold text-[#212121] dark:text-white">Your Itinerary</h3>
               <CloseButton />
             </header>
 
             <div className="flex flex-col overflow-y-auto flex-1 custom-scroll">
               {activities.length === 0 ? (
-                <p className="text-sm text-gray-400 p-4 text-center">No activities yet.</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 p-4 text-center">No activities yet.</p>
               ) : (
                 activities.map((activity, idx) => (
                   <ActivityCard
@@ -295,8 +304,8 @@ export default function PanelPage() {
               )}
             </div>
 
-            <footer className="flex justify-end p-3 border-t border-gray-200">
-              <p className="text-sm font-semibold text-[#006064]">
+            <footer className="flex justify-end p-3 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-sm font-semibold text-[#006064] dark:text-teal-400">
                 Total: ${totalCost.toLocaleString()}
               </p>
             </footer>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Roboto, Merriweather } from 'next/font/google';
-import {PostProvider} from "@/Context/PostProvider"
+import { PostProvider } from "@/Context/PostProvider"
+import { ThemeProvider } from "@/Context/ThemeContext"
 import "./globals.css";
 
 const roboto = Roboto({
@@ -33,9 +34,11 @@ export default function RootLayout({
       className={`${roboto.variable} antialiased`}
     >
       <body>
-        <PostProvider>
-          {children}
-        </PostProvider>
+        <ThemeProvider>
+          <PostProvider>
+            {children}
+          </PostProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
