@@ -46,10 +46,19 @@ class DayDetail(BaseModel):
     activities: List[ActivityDetail]
     cost: int
 
+class Journey(BaseModel):
+    origin: str
+    origin_lat: Optional[float] = None
+    origin_lng: Optional[float] = None
+    destination: str
+    destination_lat: Optional[float] = None
+    destination_lng: Optional[float] = None
+
 class ItineraryResponse(BaseModel):
     itinerary: str # Cleaned raw text
     days: List[DayDetail] = [] # Structured day-by-day data
     destinations: List[DestinationDetail] = [] # Detailed info for each stop
+    journeys: List[Journey] = [] # Original origin→destination travel legs
     summary: Dict[str, Any] = {} # Structured summary data
     success: bool
     error: Optional[str] = None

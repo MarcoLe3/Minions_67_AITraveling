@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from models.itinerary import ItineraryRequest, ItineraryResponse
+from models.itinerary import ItineraryRequest, ItineraryResponse, Journey
 from ai.itinerary import generate_itinerary_service
 
 """
@@ -43,10 +43,24 @@ def generate_itinerary(request: ItineraryRequest):
             days=request.days
         )
 
+        journeys = [
+            Journey(
+                origin=path[0].name,
+                origin_lat=path[0].lat,
+                origin_lng=path[0].lng,
+                destination=path[1].name,
+                destination_lat=path[1].lat,
+                destination_lng=path[1].lng,
+            )
+            for path in request.paths
+            if len(path) == 2
+        ]
+
         clean_res = ItineraryResponse(
             itinerary=result["cleaned_text"],
             days=result["days"],
             destinations=result["destinations"],
+            journeys=journeys,
             summary=result["summary"],
             success=True
         )

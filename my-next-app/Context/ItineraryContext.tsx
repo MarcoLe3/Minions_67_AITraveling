@@ -21,12 +21,22 @@ export interface ActiveActivity {
   lng: number
 }
 
+export interface Journey {
+  origin: string
+  origin_lat: number | null
+  origin_lng: number | null
+  destination: string
+  destination_lat: number | null
+  destination_lng: number | null
+}
+
 interface ItineraryContextType {
   activities: ActivityFull[]
   removeActivity: (dayIndex: number, activityIndex: number) => void
   activeActivity: ActiveActivity | null
   setActiveActivity: (a: ActiveActivity | null) => void
   days: any[]
+  journeys: Journey[]
 }
 
 const ItineraryContext = createContext<ItineraryContextType>({
@@ -35,10 +45,12 @@ const ItineraryContext = createContext<ItineraryContextType>({
   activeActivity: null,
   setActiveActivity: () => {},
   days: [],
+  journeys: [],
 })
 
 export function ItineraryProvider({ children }: { children: ReactNode }) {
   const [days, setDays] = useState<any[]>([])
+  const [journeys, setJourneys] = useState<Journey[]>([])
   const [removedKeys, setRemovedKeys] = useState<Set<ActivityKey>>(new Set())
   const [activeActivity, setActiveActivity] = useState<ActiveActivity | null>(null)
 
@@ -49,8 +61,10 @@ export function ItineraryProvider({ children }: { children: ReactNode }) {
       try {
         const data = JSON.parse(raw)
         setDays(data.days ?? [])
+        setJourneys(data.journeys ?? [])
       } catch {
         setDays([])
+        setJourneys([])
       }
     }
   }, [])
@@ -85,7 +99,7 @@ export function ItineraryProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ItineraryContext value={{ activities, removeActivity, activeActivity, setActiveActivity, days }}>
+    <ItineraryContext value={{ activities, removeActivity, activeActivity, setActiveActivity, days, journeys }}>
       {children}
     </ItineraryContext>
   )
