@@ -6,16 +6,55 @@ import { useMapsLibrary } from '@vis.gl/react-google-maps'
 import { useItinerary, ActivityFull } from '@/Context/ItineraryContext'
 import { ThemeToggle } from '@/components/Button/ThemeToggle'
 
-// ── Google Places photo hook ──────────────────────────────────────────────────
-// fallbackUrl is shown immediately; replaced with a real Places photo when one loads.
+// ── Wikipedia image helper (browser-side, no API key needed) ─────────────────
 
-function usePlacePhoto(name: string, destination: string, fallbackUrl: string): string {
-  const [url, setUrl] = useState(fallbackUrl)
+async function fetchWikiImage(query: string): Promise<string> {
+  try {
+    const searchRes = await fetch(
+      `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&srlimit=1&origin=*`
+    )
+    const title = (await searchRes.json())?.query?.search?.[0]?.title
+    if (!title) return ''
+    const imgRes = await fetch(
+      `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=800&origin=*`
+    )
+    const pages: Record<string, any> = (await imgRes.json())?.query?.pages ?? {}
+    for (const page of Object.values(pages)) {
+      if (page?.thumbnail?.source) return page.thumbnail.source as string
+    }
+  } catch {}
+  return ''
+}
+
+// ── Photo hook — three-layer fallback ────────────────────────────────────────
+// Layer 1: backend-provided Wikipedia URL (shown immediately)
+// Layer 2: browser-side Wikipedia fetch (covers old session data with empty image_url)
+// Layer 3: Google Places upgrade (highest quality, replaces if found)
+// onError: if Places URL breaks, drops back to the Wikipedia URL
+
+function usePlacePhoto(
+  name: string,
+  destination: string,
+  backendUrl: string
+): [string, () => void] {
+  const [wikiUrl, setWikiUrl] = useState(backendUrl)
+  const [placesUrl, setPlacesUrl] = useState('')
   const places = useMapsLibrary('places')
 
-  // Keep fallback in sync if the activity changes
-  useEffect(() => { setUrl(fallbackUrl) }, [fallbackUrl])
+  // Sync backend URL changes (e.g. activity changes)
+  useEffect(() => { setWikiUrl(backendUrl); setPlacesUrl('') }, [backendUrl])
 
+  // Layer 2: if backend gave nothing, fetch Wikipedia from the browser
+  useEffect(() => {
+    if (backendUrl || !name) return
+    let cancelled = false
+    fetchWikiImage(`${name} ${destination}`.trim()).then(url => {
+      if (!cancelled && url) setWikiUrl(url)
+    })
+    return () => { cancelled = true }
+  }, [backendUrl, name, destination])
+
+  // Layer 3: try to upgrade to a Google Places photo
   useEffect(() => {
     if (!places || !name) return
     let cancelled = false
@@ -24,14 +63,17 @@ function usePlacePhoto(name: string, destination: string, fallbackUrl: string): 
       { query: destination ? `${name} ${destination}` : name, fields: ['photos'] },
       (results, status) => {
         if (!cancelled && status === places.PlacesServiceStatus.OK && results?.[0]?.photos?.[0]) {
-          setUrl(results[0].photos[0].getUrl({ maxWidth: 800 }))
+          setPlacesUrl(results[0].photos[0].getUrl({ maxWidth: 800 }))
         }
       }
     )
     return () => { cancelled = true }
   }, [places, name, destination])
 
-  return url
+  // If Places URL breaks on load, clear it so wikiUrl shows instead
+  const onError = () => setPlacesUrl('')
+
+  return [placesUrl || wikiUrl, onError]
 }
 
 // ── Panel open/close context ────────────────────────────────────────────────
@@ -111,7 +153,7 @@ interface ActivityCardProps {
 }
 
 function ActivityCard({ activity, isActive, cardRef, onClick, onRemove }: ActivityCardProps) {
-  const imgSrc = usePlacePhoto(activity.name, activity.destination, activity.image_url)
+  const [imgSrc, onImgError] = usePlacePhoto(activity.name, activity.destination, activity.image_url)
 
   return (
     <article
@@ -167,6 +209,7 @@ function ActivityCard({ activity, isActive, cardRef, onClick, onRemove }: Activi
             <img
               alt={activity.name}
               src={imgSrc}
+              onError={onImgError}
               className="w-full h-full object-cover"
               loading="lazy"
             />
@@ -180,7 +223,7 @@ function ActivityCard({ activity, isActive, cardRef, onClick, onRemove }: Activi
 // ── Detail panel (shown when a card is active) ────────────────────────────────
 
 function DetailPanel({ activity, onClose }: { activity: ActivityFull; onClose: () => void }) {
-  const imgSrc = usePlacePhoto(activity.name, activity.destination, activity.image_url)
+  const [imgSrc, onImgError] = usePlacePhoto(activity.name, activity.destination, activity.image_url)
 
   return (
     <aside
@@ -193,6 +236,7 @@ function DetailPanel({ activity, onClose }: { activity: ActivityFull; onClose: (
           <img
             alt={activity.name}
             src={imgSrc}
+            onError={onImgError}
             className="w-full h-full object-cover"
           />
         ) : (
