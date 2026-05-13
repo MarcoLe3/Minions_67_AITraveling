@@ -16,6 +16,7 @@ HF_MODEL = "meta-llama/Llama-3.1-8B-Instruct"
 HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
 
 HEADERS = {"Authorization": f"Bearer {HF_API_KEY}"}
+WIKI_HEADERS = {"User-Agent": "AITravelPlanner/1.0 (contact: support@example.com)"}
 
 
 # --- Pydantic Models for AI Output ---
@@ -202,7 +203,7 @@ def _get_wiki_image(name: str, destination: str = "") -> str:
         search = requests.get(base, params={
             "action": "query", "list": "search", "srsearch": query,
             "format": "json", "srlimit": 1,
-        }, timeout=6)
+        }, headers=WIKI_HEADERS, timeout=6)
         results = search.json().get("query", {}).get("search", [])
         if not results:
             return ""
@@ -213,7 +214,7 @@ def _get_wiki_image(name: str, destination: str = "") -> str:
         img_resp = requests.get(base, params={
             "action": "query", "titles": title, "prop": "pageimages",
             "format": "json", "pithumbsize": 800,
-        }, timeout=6)
+        }, headers=WIKI_HEADERS, timeout=6)
         pages = img_resp.json().get("query", {}).get("pages", {})
         for page in pages.values():
             src = page.get("thumbnail", {}).get("source", "")
@@ -225,17 +226,36 @@ def _get_wiki_image(name: str, destination: str = "") -> str:
 
 
 def _get_image_url(name: str, destination: str = "") -> str:
-    """Return a realistic photo URL, falling back to loremflickr."""
-    url = _get_wiki_image(name, destination)
-    if url:
-        return url
-    # Second attempt: just the name (sometimes destination name confuses Wikipedia)
-    url = _get_wiki_image(name)
-    if url:
-        return url
+    """Return a realistic photo URL, falling back to various placeholders."""
+    # If the name already contains the destination, don't pass it as a separate context
+    # to avoid "Brooklyn Bridge NYC NYC" queries.
+    if destination.lower() in name.lower():
+        url = _get_wiki_image(name)
+    else:
+        url = _get_wiki_image(name, destination)
     
-    # Final fallback: A high-quality, guaranteed generic travel photo (no cats)
-    return "https://images.unsplash.com/photo-1500835556837-99ac94a94552?auto=format&fit=crop&w=800&q=60"
+    if url:
+        return url
+
+    # Second attempt: just the name
+    if destination:
+        url = _get_wiki_image(name)
+        if url:
+            return url
+    
+    # Final fallback: A diverse pool of high-quality travel images to avoid duplicates and cats.
+    fallbacks = [
+        "https://images.unsplash.com/photo-1500835556837-99ac94a94552", # plane
+        "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800", # road trip
+        "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1", # mountain lake
+        "https://images.unsplash.com/photo-1502602898657-3e91760cbb34", # paris
+        "https://images.unsplash.com/photo-1493246507139-91e8bef99c02", # mountains
+        "https://images.unsplash.com/photo-1530789253588-58204b193d5f", # airport city
+        "https://images.unsplash.com/photo-1501785888041-af3ef285b470", # coastal
+    ]
+    # Pick one based on the name hash for consistency within the session
+    idx = hash(name) % len(fallbacks)
+    return f"{fallbacks[idx]}?auto=format&fit=crop&w=800&q=60"
 
 
 def _call_hf_inference(prompt: str) -> str:
