@@ -64,31 +64,34 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
     """
     # 1. Prompt Construction
     print("beginning")
-    # Get unique destination names
-    destinations = list(set([p[1].name for p in paths if len(p) == 2]))
-    dest_str = ", ".join(destinations)
-    
-    path_descriptions = ", then ".join([f"from {p[0].name} to {p[1].name}" for p in paths if len(p) == 2])
-    
+    # The destination is where the traveler is going (index 1 of each path pair)
+    dest_names = list(set([p[1].name for p in paths if len(p) == 2]))
+    dest_str = ", ".join(dest_names)
+    origin_names = list(set([p[0].name for p in paths if len(p) == 2]))
+    origin_str = ", ".join(origin_names)
+
     prompt = (
-        f"Generate a {days}-day travel itinerary for a trip to {path_descriptions} with a budget of ${budget}.\n"
+        f"Generate a {days}-day itinerary of things to do in {dest_str} with a total budget of ${budget}.\n"
+        f"Context: the traveler is flying in from {origin_str}, but the itinerary covers ONLY activities and attractions inside {dest_str}.\n"
         "Output ONLY a JSON object with this EXACT structure:\n"
         "{\n"
         "  \"destinations\": [{\"name\": \"...\", \"description\": \"...\", \"estimated_price\": 0, \"necessities\": \"...\", \"lat\": 0.0, \"lng\": 0.0}],\n"
         "  \"days\": [\n"
-        "    {\"day\": 1, \"origin\": \"Specific location in destination\", \"origin_lat\": 0.0, \"origin_lng\": 0.0, \"destination\": \"Specific attraction in destination\", \"destination_lat\": 0.0, \"destination_lng\": 0.0, \"image_query\": \"...\", "
+        f"    {{\"day\": 1, \"origin\": \"Specific neighbourhood or landmark in {dest_str}\", \"origin_lat\": 0.0, \"origin_lng\": 0.0, "
+        f"\"destination\": \"Specific attraction in {dest_str}\", \"destination_lat\": 0.0, \"destination_lng\": 0.0, \"image_query\": \"...\", "
         "\"activities\": [{\"name\": \"Activity Name\", \"description\": \"1-2 sentence description.\", \"estimated_cost\": 0, \"lat\": 0.0, \"lng\": 0.0}], \"cost\": 0}\n"
         "  ],\n"
         "  \"summary\": {\"total_cost\": 0, \"budget_fit\": \"Yes/No\"}\n"
         "}\n"
         "RULES:\n"
-        "1. FOCUS all activities and locations EXCLUSIVELY on the destination(s) (e.g., if flying London to Paris, only show Paris attractions).\n"
-        "2. 'destinations' list: exactly 5 unique attractions/places within the destination(s).\n"
-        "3. 'days' list: exactly " + str(days) + " entries. Each day must show a specific route within the destination city.\n"
-        "4. Each day's 'activities' must be an array of 3-5 objects with name, description (1-2 sentences), estimated_cost (integer), lat, lng.\n"
-        "5. All coordinates must be real, accurate GPS coordinates for the actual named locations.\n"
-        "6. 'summary' object: MUST be a top-level key.\n"
-        "7. Costs and coordinates are required and must be numeric.\n"
+        f"1. Every activity, location, and coordinate MUST be physically located in {dest_str}. "
+        f"Do NOT include anything from {origin_str}, airports, flights, or transit.\n"
+        f"2. 'destinations' list: exactly 5 unique tourist attractions or landmarks inside {dest_str}.\n"
+        f"3. 'days' list: exactly {days} entries. Each day is a full day of sightseeing within {dest_str}.\n"
+        "4. Each day's 'activities': array of 3-5 objects — name, description (1-2 sentences), estimated_cost (integer USD), lat, lng.\n"
+        f"5. All coordinates must be real, accurate GPS coordinates for named locations inside {dest_str}.\n"
+        "6. 'summary' MUST be a top-level key.\n"
+        "7. All costs and coordinates must be numeric.\n"
         "8. Output NO text other than the JSON object."
     )
 
