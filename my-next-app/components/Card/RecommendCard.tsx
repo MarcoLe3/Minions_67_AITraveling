@@ -1,45 +1,81 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { createContext, useContext } from "react";
+import { MapPin, Loader2 } from "lucide-react";
+import { createContext, useContext, useState } from "react";
+import { useRouter } from "next/navigation";
+import { usePostContext } from "@/Context/PostProvider";
 
 interface RecommendCardProp {
   title: string;
   location: string;
   image: string;
+  lat: number;
+  lng: number;
   bgColor: string;
   titleColor: string;
   locationColor: string;
 }
 
-const ThemeContext = createContext<string>("");
+const SF = { name: "San Francisco", lat: 37.7749, lng: -122.4194 };
 
-function LearnMore() {
-  const title = useContext(ThemeContext);
+interface DestCtx {
+  title: string;
+  lat: number;
+  lng: number;
+}
+const DestContext = createContext<DestCtx>({ title: "", lat: 0, lng: 0 });
+
+function ExploreButton() {
+  const { title, lat, lng } = useContext(DestContext);
+  const { sendDataToServer, loading } = usePostContext();
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+
+  const handleClick = async () => {
+    if (pending || loading) return;
+    setPending(true);
+    const result = await sendDataToServer({
+      paths: [[SF, { name: title, lat, lng }]],
+      budget: 1000,
+      days: 7,
+    });
+    setPending(false);
+    if (result?.success) {
+      router.push("/map/demoMap");
+    } else {
+      alert(`Could not load trip: ${result?.error || "Unknown error"}`);
+    }
+  };
 
   return (
-    <Link
-      aria-label={`Learn more about ${title}`}
+    <button
+      onClick={handleClick}
+      disabled={pending}
+      aria-label={`Explore ${title}`}
       className="
-        flex gap-2 items-center justify-center
-        bg-[#4285F4] hover:bg-[#3066be] hover:shadow-xl
-        text-white w-fit h-fit
-        px-3 py-2 rounded-3xl
-        font-semibold cursor-pointer
-        transition-colors duration-200
+        self-start mt-3
+        inline-flex items-center gap-1.5
+        bg-white/20 hover:bg-white/35 disabled:opacity-60 backdrop-blur-sm
+        text-white text-sm font-semibold
+        px-4 py-2 rounded-full border border-white/30
+        transition-all duration-200 cursor-pointer disabled:cursor-not-allowed
       "
-      href={`/map/${title}`}
     >
-      Learn more
-      <Image
-        alt=""
-        aria-hidden="true"
-        src="/arrow-right.svg"
-        width={20}
-        height={20}
-      />
-    </Link>
+      {pending ? (
+        <>
+          <Loader2 size={14} className="animate-spin" />
+          Loading…
+        </>
+      ) : (
+        <>
+          Explore
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </>
+      )}
+    </button>
   );
 }
 
@@ -47,52 +83,39 @@ export function RecommendCard({
   title,
   location,
   image,
-  bgColor,
-  titleColor,
-  locationColor,
+  lat,
+  lng,
 }: RecommendCardProp) {
   return (
-    <ThemeContext value={title}>
+    <DestContext value={{ title, lat, lng }}>
       <article
-        style={{ backgroundColor: bgColor }}
-        className="flex flex-col gap-4 p-4 rounded-2xl"
+        className="relative w-72 h-96 rounded-3xl overflow-hidden group cursor-pointer shadow-lg transition-all duration-400 hover:scale-[1.03] hover:shadow-2xl"
         aria-label={`${title} in ${location}`}
         itemScope
       >
-        <header className="flex justify-between gap-4 items-start">
-          <div>
-            <h2
-              style={{ color: titleColor }}
-              className="text-xl font-semibold"
-              itemProp="name"
-            >
-              {title}
-            </h2>
-            <address
-              style={{ color: locationColor }}
-              className="text-md not-italic"
-              itemProp="address"
-            >
-              {location}
-            </address>
-          </div>
+        <Image
+          alt={`${title}, ${location}`}
+          src={image}
+          fill
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          loading="lazy"
+          decoding="async"
+          itemProp="image"
+        />
 
-          <LearnMore />
-        </header>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-        <figure className="">
-          <Image
-            alt={`${title}, ${location}`}
-            src={image}
-            width={400}
-            height={350}
-            className="rounded-2xl w-full h-auto"
-            loading="lazy"
-            decoding="async"
-            itemProp="image"
-          />
-        </figure>
+        <div className="absolute inset-0 flex flex-col justify-end p-5">
+          <h2 className="text-2xl font-bold text-white leading-tight" itemProp="name">
+            {title}
+          </h2>
+          <address className="flex items-center gap-1 not-italic text-white/70 text-sm mt-1" itemProp="address">
+            <MapPin size={13} />
+            {location}
+          </address>
+          <ExploreButton />
+        </div>
       </article>
-    </ThemeContext>
+    </DestContext>
   );
 }
