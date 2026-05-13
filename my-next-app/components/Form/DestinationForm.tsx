@@ -21,7 +21,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import router from 'next/dist/shared/lib/router/router';
+// import router from 'next/dist/shared/lib/router/router';
 
 interface DestinationIconInput {
     id: string;
@@ -125,30 +125,53 @@ export default function DestinationForm(){
 
     const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
-      console.log("submitted")
+      
       const data = new FormData(formRef.current!)
       const payload = Object.fromEntries(data.entries())
-      console.log("payload:", payload)
+      console.log("Form payload:", payload)
 
       const fromStr = payload['date-range_from'] as string;
       const toStr = payload['date-range_to'] as string;
 
+      if (!fromStr || !toStr) {
+        alert("Please select a date range.");
+        return;
+      }
+
       const from = new Date(fromStr);
       const to = new Date(toStr);
-      const days = Math.max(1, (to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24))
+      
+      if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+        alert("Invalid dates selected.");
+        return;
+      }
+
+      // Calculate days correctly (difference in days, at least 1)
+      const diffTime = Math.abs(to.getTime() - from.getTime());
+      const days = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+
+      if (!payload.origin || !payload.destination) {
+        alert("Please enter both origin and destination.");
+        return;
+      }
 
       const fakeData = {
         paths: [[
-          { name: payload.origin, lat: 37.7749, lng: 122.4194 },
-          { name: payload.destination, lat: 37.34, lng: 121.89 },
+          { name: payload.origin as string, lat: 37.7749, lng: 122.4194 },
+          { name: payload.destination as string, lat: 37.34, lng: 121.89 },
         ]],
         budget: Number(payload.budget) || 1000,
-        days,
+        days: Math.floor(days), // Ensure it is an integer
       }
-      console.log("sent");
+
+      console.log("Sending request to server:", fakeData);
       const result = await sendDataToServer(fakeData)
+      
       if (result?.success) {
         router.push('/map/demoMap');
+      } else {
+        console.error("Search failed:", result?.error);
+        alert(`Search failed: ${result?.error || "Unknown error"}`);
       }
     }
 
@@ -186,7 +209,7 @@ export default function DestinationForm(){
                   />
                   <DatePickerWithRange name="date-range"/>
                 </section>
-                <BasicButton type="submit" text="Search"/>
+                <BasicButton type="submit" text={loading ? "Searching..." : "Search"}/>
             </form>
         </div>
     )

@@ -64,41 +64,21 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
     path_descriptions = ", then ".join([f"from {p[0].name} to {p[1].name}" for p in paths if len(p) == 2])
     
     prompt = (
-        "You are an expert AI Travel Assistant. Create a highly detailed and structured "
-        f"travel itinerary for a trip {path_descriptions} "
-        f"for a total duration of {days} days, with a total budget of ${budget}.\n\n"
-        "Return the itinerary in JSON format matching this structure:\n"
+        f"Generate a {days}-day travel itinerary for {path_descriptions} with a budget of ${budget}.\n"
+        "Output ONLY a JSON object with this EXACT structure:\n"
         "{\n"
-        "  \"destinations\": [\n"
-        "    {\n"
-        "      \"name\": \"City/Place Name\",\n"
-        "      \"description\": \"Overview\",\n"
-        "      \"estimated_price\": 500,\n"
-        "      \"necessities\": \"Tips/Weather/Visas\",\n"
-        "      \"lat\": float, \"lng\": float\n"
-        "    }\n"
-        "  ],\n"
+        "  \"destinations\": [{\"name\": \"...\", \"description\": \"...\", \"estimated_price\": 0, \"necessities\": \"...\", \"lat\": 0.0, \"lng\": 0.0}],\n"
         "  \"days\": [\n"
-        "    {\n"
-        "      \"day\": 1,\n"
-        "      \"origin\": \"Specific Hotel/Landmark\",\n"
-        "      \"origin_lat\": float, \"origin_lng\": float,\n"
-        "      \"destination\": \"Specific Attraction/Restaurant\",\n"
-        "      \"destination_lat\": float, \"destination_lng\": float,\n"
-        "      \"image_query\": \"Specific landmark for images\",\n"
-        "      \"activities\": [\"Activity 1\", \"Activity 2\"],\n"
-        "      \"cost\": 150\n"
-        "    }\n"
+        "    {\"day\": 1, \"origin\": \"...\", \"origin_lat\": 0.0, \"origin_lng\": 0.0, \"destination\": \"...\", \"destination_lat\": 0.0, \"destination_lng\": 0.0, \"image_query\": \"...\", \"activities\": [\"...\"], \"cost\": 0}\n"
         "  ],\n"
-        "  \"summary\": {\n"
-        "    \"total_cost\": total_sum,\n"
-        "    \"budget_fit\": \"Yes/No\"\n"
-        "  }\n"
-        "}\n\n"
-        "IMPORTANT: Be extremely specific with Origin and Destination names (e.g. use specific hotel names, landmarks, or restaurants, NOT just the city name). "
-        "Provide precise coordinates for every origin and destination. "
-        "All costs MUST be integers. "
-        "Return ONLY the JSON object."
+        "  \"summary\": {\"total_cost\": 0, \"budget_fit\": \"Yes/No\"}\n"
+        "}\n"
+        "RULES:\n"
+        "1. 'destinations' list: exactly 5 unique entries.\n"
+        "2. 'days' list: exactly " + str(days) + " entries (one per day).\n"
+        "3. 'summary' object: MUST be a top-level key, NOT inside the 'days' list.\n"
+        "4. Coordinates and costs are required and must be numeric.\n"
+        "5. Output NO text other than the JSON object."
     )
 
     # 2. AI Call
@@ -135,15 +115,16 @@ def _call_hf_inference(prompt: str) -> str:
     payload = {
         "model": HF_MODEL,
         "messages": [
-            {"role": "system", "content": "You are a professional travel agent."},
+            {"role": "system", "content": "You are a professional travel agent that only outputs valid JSON."},
             {"role": "user", "content": prompt}
         ],
-        "max_tokens": 1024,
-        "temperature": 0.7,
+        "max_tokens": 4096,
+        "temperature": 0.3,
+        "response_format": {"type": "json_object"}
     }
 
     try:
-        response = requests.post(HF_API_URL, headers=HEADERS, json=payload, timeout=30)
+        response = requests.post(HF_API_URL, headers=HEADERS, json=payload, timeout=60)
         response.raise_for_status()
     except requests.exceptions.Timeout:
         raise RuntimeError("The request to Hugging Face timed out.")
@@ -155,7 +136,11 @@ def _call_hf_inference(prompt: str) -> str:
 
     data = response.json()
     if "choices" in data and len(data["choices"]) > 0:
-        return data["choices"][0]["message"]["content"].strip()
+        raw_content = data["choices"][0]["message"]["content"].strip()
+        # Debug log for investigation
+        with open("ai_response_debug.log", "w") as f:
+            f.write(raw_content)
+        return raw_content
     
     raise RuntimeError("Unexpected response format from AI service.")
 
@@ -182,7 +167,7 @@ def _parse_cost_to_int(cost_str: str) -> int:
 def _parse_itinerary(text: str) -> Dict[str, Any]:
     """Helper to clean and structure the raw AI response."""
     # 1. Extract JSON from text (in case it's wrapped in markdown blocks)
-    json_str = text
+    json_str = text.strip()
     if "```json" in text:
         json_str = text.split("```json")[1].split("```")[0].strip()
     elif "```" in text:
@@ -194,16 +179,34 @@ def _parse_itinerary(text: str) -> Dict[str, Any]:
     if start_idx != -1 and end_idx != -1:
         json_str = json_str[start_idx : end_idx + 1]
 
+    # Post-processing to handle common AI JSON mistakes
+    # 1. Remove trailing commas before closing braces/brackets
+    json_str = re.sub(r',\s*([}\]])', r'\1', json_str)
+    
+    # 2. Fix potential issues with control characters
+    json_str = json_str.replace('\n', ' ').replace('\r', ' ')
+    
+    # 3. Attempt to fix common unescaped quote issues in "key": "value" pairs
+    # This is a bit aggressive but can save many failed responses
+    # We look for quotes that are NOT followed by a colon, comma, brace, or bracket
+    # This is complex, so let's stick to simpler fixes first or use a library if possible.
+    # For now, let's just ensure we have a clean string.
+
     try:
         data = json.loads(json_str)
         # Validate with Pydantic
-        itinerary_data = AIItineraryResponse(**data)
-        
+        try:
+            itinerary_data = AIItineraryResponse(**data)
+        except Exception as ve:
+            print(f"Pydantic Validation Error: {ve}")
+            with open("failed_pydantic_validation.json", "w") as f:
+                f.write(json.dumps(data, indent=2))
+            raise ve
+            
         # Convert back to dict and add cleaned_text for compatibility
         result = itinerary_data.model_dump()
         
         # Construct a "cleaned_text" field for compatibility if needed
-        # (Though structured data is preferred now)
         days_text = []
         for d in result["days"]:
             days_text.append(f"Day {d['day']}: {d['origin']} to {d['destination']}")
@@ -213,6 +216,7 @@ def _parse_itinerary(text: str) -> Dict[str, Any]:
         
     except (json.JSONDecodeError, ValueError) as e:
         print(f"Failed to parse AI JSON: {e}")
-        print("Raw text:", text)
-        # Fallback or re-raise
+        # Log the problematic string to a file for investigation
+        with open("failed_json_parse.txt", "w") as f:
+            f.write(json_str)
         raise RuntimeError(f"Failed to parse itinerary JSON: {str(e)}")

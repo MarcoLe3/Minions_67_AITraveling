@@ -30,12 +30,17 @@ export function PostProvider({ children }: { children: ReactNode }) {
       );
       console.log("Response received");
       const json = await res.json();
+      if (!res.ok) {
+        setError(true);
+        return { success: false, error: json.detail || "Server error" };
+      }
       setData(json);
       sessionStorage.setItem('itineraryData', JSON.stringify(json));
       console.log("Data set in context:", json);
       return json;
-    } catch {
+    } catch (e: any) {
       setError(true);
+      return { success: false, error: e.message || "Network error" };
     } finally {
       setLoading(false);
     }
