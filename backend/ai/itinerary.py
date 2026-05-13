@@ -3,6 +3,7 @@ import re
 import requests
 from typing import Dict, Any, List, Optional, Union
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -121,25 +122,87 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
         raise last_error
 
     print("Structured Result:", result)
-    
-    # 4. Add images for destinations and days
+
+    # 4. Fetch images for destinations and day headers (activities get photos from Google Places on the frontend)
+    tasks: list[tuple[dict, str, str]] = []
     for dest in result.get("destinations", []):
-        dest["image_url"] = _get_image_url(dest["name"])
-        
+        tasks.append((dest, dest["name"], dest_str))
     for day in result.get("days", []):
         query = day.get("image_query") or day.get("destination") or "travel"
-        day["image_url"] = _get_image_url(query)
+        tasks.append((day, query, dest_str))
+
+    def _fetch(item: tuple[dict, str, str]):
+        obj, name, ctx = item
+        return obj, _get_image_url(name, ctx)
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = {pool.submit(_fetch, t): t for t in tasks}
+        for fut in as_completed(futures):
+            obj, url = fut.result()
+            obj["image_url"] = url
+
+    # Activities intentionally get no image_url — the frontend fetches real photos via Google Places
+    for day in result.get("days", []):
         for activity in day.get("activities", []):
-            activity["image_url"] = _get_image_url(activity.get("name", "travel"))
-        
+            activity["image_url"] = ""
+
     return result
 
 
-def _get_image_url(query: str) -> str:
-    """Helper to get a representative image URL."""
-    clean_query = query.replace(" ", ",").lower()
-    # Using LoremFlickr which is more reliable for simple queries than the phased-out source.unsplash.com
-    return f"https://loremflickr.com/800/600/{clean_query}"
+_STRIP_PREFIXES = re.compile(
+    r"^(visit|explore|see|take a|take the|enjoy|discover|walk through|walk to|"
+    r"stroll through|head to|go to|try|attend|experience|a |the )\s*",
+    re.IGNORECASE,
+)
+
+def _clean_image_query(name: str, destination: str = "") -> str:
+    """Strip travel-verb prefixes and append destination for better image results."""
+    cleaned = _STRIP_PREFIXES.sub("", name).strip()
+    # Remove parentheticals like "(optional)" or "(half day)"
+    cleaned = re.sub(r"\s*\(.*?\)", "", cleaned).strip()
+    if destination:
+        return f"{cleaned} {destination}"
+    return cleaned
+
+
+def _get_wiki_image(name: str, destination: str = "") -> str:
+    """Fetch a real photo from Wikipedia. Returns URL or empty string on failure."""
+    query = _clean_image_query(name, destination)
+    base = "https://en.wikipedia.org/w/api.php"
+    try:
+        # Step 1: find best-matching article title
+        search = requests.get(base, params={
+            "action": "query", "list": "search", "srsearch": query,
+            "format": "json", "srlimit": 1,
+        }, timeout=6)
+        results = search.json().get("query", {}).get("search", [])
+        if not results:
+            return ""
+
+        title = results[0]["title"]
+
+        # Step 2: get its thumbnail
+        img_resp = requests.get(base, params={
+            "action": "query", "titles": title, "prop": "pageimages",
+            "format": "json", "pithumbsize": 800,
+        }, timeout=6)
+        pages = img_resp.json().get("query", {}).get("pages", {})
+        for page in pages.values():
+            src = page.get("thumbnail", {}).get("source", "")
+            if src:
+                return src
+    except Exception:
+        pass
+    return ""
+
+
+def _get_image_url(name: str, destination: str = "") -> str:
+    """Return a realistic photo URL, falling back to loremflickr."""
+    url = _get_wiki_image(name, destination)
+    if url:
+        return url
+    clean = _clean_image_query(name).replace(" ", ",").lower()
+    return f"https://loremflickr.com/800/600/{clean}"
 
 
 def _call_hf_inference(prompt: str) -> str:

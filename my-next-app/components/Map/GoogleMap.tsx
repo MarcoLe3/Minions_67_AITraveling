@@ -1,5 +1,5 @@
 'use client'
-import { APIProvider, Map, useMap } from "@vis.gl/react-google-maps"
+import { Map, useMap } from "@vis.gl/react-google-maps"
 import { useEffect } from "react"
 import MapRenderDirections from "@/components/Map/MapLines"
 import JourneyRoute from "@/components/Map/JourneyRoute"
@@ -52,7 +52,6 @@ function MapFitJourneys() {
 }
 
 export default function MainMap() {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAP_API
   const mapId = process.env.NEXT_PUBLIC_MAP_ID
   const { activities, days, journeys } = useItinerary()
 
@@ -66,44 +65,42 @@ export default function MainMap() {
       : { lat: 37.7749, lng: -122.4194 }
 
   return (
-    <APIProvider apiKey={apiKey as string}>
-      <div style={{ height: '100vh', width: '100%' }}>
-        <Map
-          defaultCenter={defaultCenter}
-          defaultZoom={5}
-          mapId={mapId}
-          disableDefaultUI={true}
-        >
-          <MapPanToActivity />
-          <MapFitJourneys />
+    <div style={{ height: '100vh', width: '100%' }}>
+      <Map
+        defaultCenter={defaultCenter}
+        defaultZoom={5}
+        mapId={mapId}
+        disableDefaultUI={true}
+      >
+        <MapPanToActivity />
+        <MapFitJourneys />
 
-          {/* Intercity journey arcs (e.g. London → Paris) */}
-          {journeys.map((j: Journey, i: number) =>
-            j.origin_lat && j.origin_lng && j.destination_lat && j.destination_lng ? (
-              <JourneyRoute
-                key={i}
-                origin={j.origin}
-                originLat={j.origin_lat}
-                originLng={j.origin_lng}
-                destination={j.destination}
-                destinationLat={j.destination_lat}
-                destinationLng={j.destination_lng}
-              />
-            ) : null
-          )}
-
-          {/* Per-day activity pins and connector lines */}
-          {days.map((day: any, index: number) => (
-            <MapRenderDirections
-              key={index}
-              index={index + 1}
-              originLocation={day.origin}
-              destinationLocation={day.destination}
-              activities={activitiesByDay[index] ?? []}
+        {/* Intercity journey arcs (e.g. London → Paris) */}
+        {journeys.map((j: Journey, i: number) =>
+          j.origin_lat && j.origin_lng && j.destination_lat && j.destination_lng ? (
+            <JourneyRoute
+              key={i}
+              origin={j.origin}
+              originLat={j.origin_lat}
+              originLng={j.origin_lng}
+              destination={j.destination}
+              destinationLat={j.destination_lat}
+              destinationLng={j.destination_lng}
             />
-          ))}
-        </Map>
-      </div>
-    </APIProvider>
+          ) : null
+        )}
+
+        {/* Per-day activity pins and connector lines */}
+        {days.map((day: any, index: number) => (
+          <MapRenderDirections
+            key={index}
+            index={index + 1}
+            originLocation={day.origin}
+            destinationLocation={day.destination}
+            activities={activitiesByDay[index] ?? []}
+          />
+        ))}
+      </Map>
+    </div>
   )
 }

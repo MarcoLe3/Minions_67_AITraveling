@@ -2,7 +2,32 @@
 import { useRouter } from 'next/navigation'
 import { useState, useContext, createContext, useMemo, useEffect, useRef } from 'react'
 import Image from 'next/image'
+import { useMapsLibrary } from '@vis.gl/react-google-maps'
 import { useItinerary, ActivityFull } from '@/Context/ItineraryContext'
+
+// ── Google Places photo hook ──────────────────────────────────────────────────
+
+function usePlacePhoto(name: string, destination: string): string {
+  const [url, setUrl] = useState('')
+  const places = useMapsLibrary('places')
+
+  useEffect(() => {
+    if (!places || !name) return
+    let cancelled = false
+    const svc = new places.PlacesService(document.createElement('div'))
+    svc.findPlaceFromQuery(
+      { query: destination ? `${name} ${destination}` : name, fields: ['photos'] },
+      (results, status) => {
+        if (!cancelled && status === places.PlacesServiceStatus.OK && results?.[0]?.photos?.[0]) {
+          setUrl(results[0].photos[0].getUrl({ maxWidth: 800 }))
+        }
+      }
+    )
+    return () => { cancelled = true }
+  }, [places, name, destination])
+
+  return url
+}
 
 // ── Panel open/close context ────────────────────────────────────────────────
 
@@ -81,6 +106,9 @@ interface ActivityCardProps {
 }
 
 function ActivityCard({ activity, isActive, cardRef, onClick, onRemove }: ActivityCardProps) {
+  const photoUrl = usePlacePhoto(activity.name, activity.destination)
+  const imgSrc = photoUrl || activity.image_url
+
   return (
     <article
       ref={cardRef}
@@ -127,16 +155,17 @@ function ActivityCard({ activity, isActive, cardRef, onClick, onRemove }: Activi
         >
           <Image alt="remove" src="/close.svg" width={14} height={14} />
         </button>
-        {activity.image_url && (
-          <Image
-            alt={activity.name}
-            src={activity.image_url}
-            width={80}
-            height={80}
-            className="rounded-lg object-cover w-[80px] h-[80px]"
-            decoding="async"
-          />
-        )}
+        <div className="rounded-lg overflow-hidden bg-gray-100 w-[80px] h-[80px] shrink-0">
+          {imgSrc && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              alt={activity.name}
+              src={imgSrc}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          )}
+        </div>
       </div>
     </article>
   )
@@ -145,19 +174,21 @@ function ActivityCard({ activity, isActive, cardRef, onClick, onRemove }: Activi
 // ── Detail panel (shown when a card is active) ────────────────────────────────
 
 function DetailPanel({ activity, onClose }: { activity: ActivityFull; onClose: () => void }) {
+  const photoUrl = usePlacePhoto(activity.name, activity.destination)
+  const imgSrc = photoUrl || activity.image_url
+
   return (
     <aside
       className="absolute top-4 bg-white rounded-2xl w-96 shadow-xl overflow-hidden flex flex-col"
       style={{ left: 'calc(350px + 1.5rem)', maxHeight: '80vh' }}
     >
-      <div className="relative w-full h-52">
-        {activity.image_url ? (
-          <Image
+      <div className="relative w-full h-52 bg-gray-100">
+        {imgSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             alt={activity.name}
-            src={activity.image_url}
-            fill
-            className="object-cover"
-            decoding="async"
+            src={imgSrc}
+            className="w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full bg-gray-200" />

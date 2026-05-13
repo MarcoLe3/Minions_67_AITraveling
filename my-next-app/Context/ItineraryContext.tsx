@@ -13,6 +13,7 @@ export interface ActivityFull {
   lat: number
   lng: number
   image_url: string
+  destination: string
 }
 
 export interface ActiveActivity {
@@ -85,6 +86,7 @@ export function ItineraryProvider({ children }: { children: ReactNode }) {
             lat: activity.lat ?? 0,
             lng: activity.lng ?? 0,
             image_url: activity.image_url ?? '',
+            destination: day.destination ?? '',
           })
         }
       })
