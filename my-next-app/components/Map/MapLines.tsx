@@ -1,122 +1,178 @@
-'use client';
-import { useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
-import { useEffect, useState, useMemo, useRef } from 'react';
-import { useActiveDay } from '@/Context/ActiveDayContext';
+'use client'
+import { useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
+import { useEffect, useRef } from 'react'
+import { useItinerary, ActivityFull } from '@/Context/ItineraryContext'
 
 interface RouteComponentProp {
-  index: number;
-  originLocation: string;
-  originLat?: number;
-  originLng?: number;
-  destinationLocation: string;
-  destinationLat?: number;
-  destinationLng?: number;
+  index: number
+  originLocation: string
+  originLat?: number
+  originLng?: number
+  destinationLocation: string
+  destinationLat?: number
+  destinationLng?: number
+  activities: ActivityFull[]
 }
 
-const renderedLocations = new Set<string>()
+function makePinElement(label: string, active: boolean): HTMLDivElement {
+  const el = document.createElement('div')
+  el.style.cssText = [
+    `width:${active ? 36 : 30}px`,
+    `height:${active ? 36 : 30}px`,
+    `background:${active ? '#E64A19' : '#FF7043'}`,
+    'border-radius:50%',
+    'display:flex',
+    'align-items:center',
+    'justify-content:center',
+    'color:white',
+    'font-weight:700',
+    `font-size:${active ? 13 : 11}px`,
+    `border:${active ? 3 : 2}px solid white`,
+    'cursor:pointer',
+    'box-shadow:0 2px 6px rgba(0,0,0,0.35)',
+    'transition:all 0.15s ease',
+    'font-family:sans-serif',
+  ].join(';')
+  el.textContent = label
+  return el
+}
 
-export default function MapRenderDirections({originLocation, destinationLocation, index, originLat, originLng, destinationLat, destinationLng}: RouteComponentProp){
-  const [route, setRoute] = useState<google.maps.DirectionsResult[]>([]);
-  const [travelingMode, setTravelingMode] = useState("DRIVING");
-  const directionRenderer = useRef(null)
-  const directionService = useRef(null)
-  const { activeDay, setActiveDay } = useActiveDay()
+export default function MapRenderDirections({
+  originLocation,
+  destinationLocation,
+  originLat,
+  originLng,
+  destinationLat,
+  destinationLng,
+  activities,
+}: RouteComponentProp) {
+  const map = useMap()
+  const routeLib = useMapsLibrary('routes')
+  const markerLib = useMapsLibrary('marker')
+  const { activeActivity, setActiveActivity } = useItinerary()
 
-  const map = useMap();
-  const routeLib = useMapsLibrary("routes");
+  const directionRenderer = useRef<google.maps.DirectionsRenderer | null>(null)
+  const directionService = useRef<google.maps.DirectionsService | null>(null)
+  const activityPolyline = useRef<google.maps.Polyline | null>(null)
+  const markersRef = useRef<Map<number, google.maps.marker.AdvancedMarkerElement>>(new Map())
 
-  useEffect(()=>{
-    if (!routeLib || !map) return;
-    if (!directionRenderer.current){
+  // Initialize direction services
+  useEffect(() => {
+    if (!routeLib || !map) return
+    if (!directionRenderer.current) {
       directionRenderer.current = new routeLib.DirectionsRenderer({
         map,
-        suppressMarkers: true});
-    } 
+        suppressMarkers: true,
+        polylineOptions: {
+          strokeColor: '#1A73E8',
+          strokeWeight: 4,
+          strokeOpacity: 0.75,
+        },
+      })
+    }
     if (!directionService.current) {
-      directionService.current = new routeLib.DirectionsService();
+      directionService.current = new routeLib.DirectionsService()
+    }
+    return () => {
+      directionRenderer.current?.setMap(null)
+      directionRenderer.current = null
+    }
+  }, [routeLib, map])
+
+  // Render the blue origin-to-destination route
+  useEffect(() => {
+    if (!routeLib || !directionRenderer.current || !directionService.current) return
+
+    const origin =
+      originLat !== undefined && originLng !== undefined
+        ? { lat: originLat, lng: originLng }
+        : originLocation
+
+    const destination =
+      destinationLat !== undefined && destinationLng !== undefined
+        ? { lat: destinationLat, lng: destinationLng }
+        : destinationLocation
+
+    directionService.current
+      .route({
+        origin,
+        destination,
+        travelMode: google.maps.TravelMode.DRIVING,
+        provideRouteAlternatives: false,
+      })
+      .then(result => {
+        directionRenderer.current?.setDirections(result)
+      })
+      .catch(err => console.error('Origin-to-destination route error:', err))
+  }, [routeLib, originLocation, originLat, originLng, destinationLocation, destinationLat, destinationLng])
+
+  // Create activity markers and orange connecting polyline
+  useEffect(() => {
+    if (!map || !markerLib) return
+
+    activityPolyline.current?.setMap(null)
+    markersRef.current.forEach(m => { m.map = null })
+    markersRef.current.clear()
+
+    if (!activities.length) return
+
+    if (activities.length > 1) {
+      activityPolyline.current = new google.maps.Polyline({
+        path: activities.map(a => ({ lat: a.lat, lng: a.lng })),
+        geodesic: true,
+        strokeColor: '#FF7043',
+        strokeOpacity: 0.8,
+        strokeWeight: 3,
+        map,
+      })
     }
 
-    /* return ()=>{
-      directionRenderer.current = null;
-      directionService.current = null;
-    } */
-  },[routeLib, map, directionRenderer, directionService])
+    activities.forEach(activity => {
+      const isActive = activeActivity?.globalIndex === activity.globalIndex
+      const pinEl = makePinElement(`${activity.globalIndex}`, isActive)
 
-  useEffect(()=> {
-    if (!routeLib || !directionRenderer.current || !directionService.current ) {
-      return;
-    }
+      const marker = new markerLib.AdvancedMarkerElement({
+        position: { lat: activity.lat, lng: activity.lng },
+        map,
+        content: pinEl,
+        title: activity.name,
+        zIndex: isActive ? 10 : 5,
+      })
 
-    const renderRoute = async()=> {
-      try{
-        const origin = (originLat !== undefined && originLng !== undefined) 
-          ? { lat: originLat, lng: originLng } 
-          : originLocation;
-          
-        const destination = (destinationLat !== undefined && destinationLng !== undefined) 
-          ? { lat: destinationLat, lng: destinationLng } 
-          : destinationLocation;
-
-        const routeInformation = await directionService.current.route({
-          origin: origin,
-          destination: destination,
-          travelMode: google.maps.TravelMode[travelingMode],
-          provideRouteAlternatives: false
+      marker.addListener('click', () => {
+        setActiveActivity({
+          globalIndex: activity.globalIndex,
+          lat: activity.lat,
+          lng: activity.lng,
         })
+      })
 
-        directionRenderer.current.setDirections(routeInformation)
+      markersRef.current.set(activity.globalIndex, marker)
+    })
 
-        setTimeout(() => {
-        const startLocation = routeInformation.routes[0].legs[0].start_location
-        const endLocation = routeInformation.routes[0].legs[0].end_location
-        const startKey = `${startLocation.lat().toFixed(3)},${startLocation.lng().toFixed(3)}`
-        const endKey = `${endLocation.lat().toFixed(3)},${endLocation.lng().toFixed(3)}`
-
-        if (!renderedLocations.has(startKey)) {
-          renderedLocations.add(startKey)
-          const startMarker = new google.maps.Marker({
-            position: startLocation,
-            map,
-            label: { text: `${index}`, color: 'white', fontWeight: 'bold' }
-          })
-          startMarker.addListener('click', () => {
-            setActiveDay(index)
-          })
-        }
-
-        if (!renderedLocations.has(endKey)) {
-          renderedLocations.add(endKey)
-          const endMarker = new google.maps.Marker({
-            position: endLocation,
-            map,
-            label: { text: `${index}`, color: 'white', fontWeight: 'bold' }
-          })
-          endMarker.addListener('click', () => {
-              setActiveDay(index)
-          })
-        }
-        }, index * 30) 
-
-        directionRenderer.current.setOptions({
-          polylineOptions: {
-          strokeColor: activeDay === index ? '#FF0000' : '#4285F4',
-          strokeWeight: activeDay === index ? 6 : 4,
-          }
-        })
-
-        setRoute((prevRoute: google.maps.DirectionsResult[]) => [...prevRoute,routeInformation])
-      } catch (error) {
-        console.error("unavaliable routeInfromation", error)
-      }
+    return () => {
+      activityPolyline.current?.setMap(null)
+      markersRef.current.forEach(m => { m.map = null })
+      markersRef.current.clear()
     }
+  }, [map, markerLib, activities])
 
-    renderRoute()
+  // Update marker pin styles when activeActivity changes — no recreation needed
+  useEffect(() => {
+    if (!map) return
+    activities.forEach(activity => {
+      const marker = markersRef.current.get(activity.globalIndex)
+      if (!marker) return
+      const isActive = activeActivity?.globalIndex === activity.globalIndex
+      const el = marker.content as HTMLElement
+      el.style.width = isActive ? '36px' : '30px'
+      el.style.height = isActive ? '36px' : '30px'
+      el.style.background = isActive ? '#E64A19' : '#FF7043'
+      el.style.fontSize = isActive ? '13px' : '11px'
+      el.style.border = `${isActive ? 3 : 2}px solid white`
+      marker.zIndex = isActive ? 10 : 5
+    })
+  }, [activeActivity, activities, map])
 
-  },[routeLib,destinationLocation,originLocation,directionRenderer.current,directionService.current, activeDay])
-
-  return (
-    <div>
-
-    </div>
-  )
+  return null
 }

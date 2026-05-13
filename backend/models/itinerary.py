@@ -26,6 +26,14 @@ class DestinationDetail(BaseModel):
     lat: Optional[float] = None
     lng: Optional[float] = None
 
+class ActivityDetail(BaseModel):
+    name: str
+    description: str
+    estimated_cost: int
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    image_url: str = ""
+
 class DayDetail(BaseModel):
     day: int
     origin: str
@@ -35,7 +43,7 @@ class DayDetail(BaseModel):
     destination_lat: Optional[float] = None
     destination_lng: Optional[float] = None
     image_url: str
-    activities: List[str]
+    activities: List[ActivityDetail]
     cost: int
 
 class ItineraryResponse(BaseModel):

@@ -1,253 +1,57 @@
-'use client';
+'use client'
 import { useRouter } from 'next/navigation'
+import { useState, useContext, createContext, useMemo, useEffect, useRef } from 'react'
+import Image from 'next/image'
+import { useItinerary, ActivityFull } from '@/Context/ItineraryContext'
 
-import { 
-    use, 
-    useState,
-    createContext,
-    useContext,
-    useMemo,
-    useEffect
-} from "react";
-import Image from "next/image";
-import { set } from "date-fns";
-
-interface ThumbnailCardProps {
-  id:number;
-  title: string;
-  budget: string;
-  description: string;
-  image: string;
-  order: string;
-}
-
-interface Destination {
-  id: string;
-  order: number;
-  title: string;
-  budget: number;
-  description: string;
-  image: string;
-  route: {
-    origin: { label: string; lat: number; lng: number };
-    destination: { label: string; lat: number; lng: number };
-  };
-}
-
-interface SelectedContext {
-  selected: ThumbnailCardProps | null;
-  setSelected: (value: ThumbnailCardProps | null) => void;
-  removeSelected: (id: number) => void;
-}
+// ── Panel open/close context ────────────────────────────────────────────────
 
 const PanelContext = createContext<{
-  enable: boolean;
-  setEnable: (value: boolean) => void;
-}>({ enable: true, setEnable: () => {} });
+  enable: boolean
+  setEnable: (v: boolean) => void
+}>({ enable: true, setEnable: () => {} })
 
-const SelectedContext = createContext<SelectedContext>({
-  selected: null,
-  setSelected: () => {},
-  removeSelected: () => {}
-});
+// ── Buttons ──────────────────────────────────────────────────────────────────
 
-function CloseButton(){
-    const [hovered,setHovered] = useState<boolean>(false)
-    const {setEnable} = useContext(PanelContext)
-
-    const enableHover = () => {
-        setHovered(true)
-    }
-
-    const disableHover = () => {
-        setHovered(false)
-    }
-    return (
-        <button
-            onMouseEnter={enableHover}
-            onMouseLeave={disableHover}
-            className="cursor-pointer"
-            onClick={()=>setEnable(false)}
-        >
-            <Image
-                alt="close"
-                src={hovered ? "/close-active.svg" : "/close.svg"}
-                width={25}
-                height={25}
-            />
-        </button>
-    )
-}
-
-function OpenButton(){
-    const [hovered,setHovered] = useState<boolean>(false)
-    const {setEnable} = useContext(PanelContext)
-
-    const enableHover = () => {
-        setHovered(true)
-    }
-
-    const disableHover = () => {
-        setHovered(false)
-    }
-    return (
-        <button
-            onMouseEnter={enableHover}
-            onMouseLeave={disableHover}
-            className="cursor-pointer"
-            onClick={()=>setEnable(true)}
-        >
-            <Image
-                alt="menu"
-                src={hovered ? "/menu-active.svg" : "/menu.svg"}
-                width={20}
-                height={20}
-                className="bg-white rounded-3xl px-2 py-2 w-fit h-fit"
-            />
-        </button>
-    )
-}
-
-function SmallCloseButton({ id }: { id: number }) {
-  const [hovered, setHovered] = useState(false);
-  const { removeSelected } = useContext(SelectedContext);
-
+function CloseButton() {
+  const [hovered, setHovered] = useState(false)
+  const { setEnable } = useContext(PanelContext)
   return (
     <button
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={(e) => {
-        e.stopPropagation();
-        removeSelected(id);
-      }}
+      onClick={() => setEnable(false)}
+      className="cursor-pointer"
+    >
+      <Image alt="close" src={hovered ? '/close-active.svg' : '/close.svg'} width={25} height={25} />
+    </button>
+  )
+}
+
+function OpenButton() {
+  const [hovered, setHovered] = useState(false)
+  const { setEnable } = useContext(PanelContext)
+  return (
+    <button
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={() => setEnable(true)}
       className="cursor-pointer"
     >
       <Image
-        alt="close"
-        src={hovered ? "/close-active.svg" : "/close.svg"}
+        alt="menu"
+        src={hovered ? '/menu-active.svg' : '/menu.svg'}
         width={20}
         height={20}
+        className="bg-white rounded-3xl px-2 py-2 w-fit h-fit"
       />
     </button>
-  );
-}
-
-function DescriptionCloseButton() {
-  const [hovered, setHovered] = useState<boolean>(false);
-  const { setSelected } = useContext(SelectedContext);
-
-  return (
-    <button
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onClick={() => setSelected(null)}
-      aria-label="Close description"
-      className="absolute top-4 right-2 cursor-pointer"
-    >
-      <Image
-        alt="close"
-        src={hovered ? "/close-active.svg" : "/close.svg"}
-        width={18}
-        height={18}
-        className="bg-white rounded-full px-2 py-2 w-fit h-fit"
-      />
-    </button>
-  );
-}
-
-//TODO: fix the title and image
-function DescriptionCard() {
-  const { selected } = useContext(SelectedContext);
-
-  const cleanedSelected = useMemo(() => {
-    if (!selected) return null;
-    return {
-      ...selected,
-      description: Array.isArray(selected.description)
-        ? selected.description.filter((desc: string) => { return desc.trim() !== "" && desc !== "Activities:"; })
-        : selected.description
-    };
-  }, [selected]);
-
-  return (
-    <aside
-      className="
-        absolute top-4 bg-white rounded-2xl w-100 h-110 flex flex-col
-        shadow-lg overflow-hidden
-        transition-all duration-300
-      "
-      style={{ left: "calc(350px + 2rem)" }}
-    >
-      <div className="relative w-full h-60">
-        <Image
-          alt="dummy"
-          src={cleanedSelected?.image || ""}
-          fill
-          className="object-cover"
-          decoding="async"
-        />
-        <DescriptionCloseButton />
-      </div>
-
-      <div className="flex flex-col gap-4 p-4 overflow-y-auto flex-1 custom-scroll">
-        <div className="flex flex-col gap-1">
-          <h4 className="text-2xl font-medium truncate text-black">{cleanedSelected?.title}</h4>
-          <p className="text-lg font-medium text-[#424242]">{cleanedSelected?.budget}</p>
-          <p className="text-sm font-medium text-[#424242] leading-relaxed">{cleanedSelected?.description}</p>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-//TODO: add title and image
-function ThumbnailCard({ title, id, budget, description, order, image }: ThumbnailCardProps) {
-  const { selected, setSelected } = useContext(SelectedContext);
-  const isSelected = selected?.id === id;
-
-  const cleanedDescription = useMemo(() => {
-    return Array.isArray(description)
-      ? description.filter((desc: string) => { return desc.trim() !== "" && desc !== "Activities:"; })
-      : description;
-  }, [description]);
-
-  return (
-    <article
-      onClick={() => setSelected(isSelected ? null : { title, id, budget, description, order, image })}
-      className={`
-        flex flex-col gap-3 w-full h-fit p-3 cursor-pointer
-        hover:bg-[#eeeeee]
-        ${isSelected ? "bg-[#eeeeee]" : "bg-white"}
-      `}
-    >
-      <header className="flex justify-end items-center">
-         <SmallCloseButton id={id} />
-      </header>
-      <div className={`flex gap-4 items-start ${isSelected ? "text-black" : "text-[#757575]"} hover:text-black`}>
-        <span className="text-lg font-medium text-[#424242]">{order}</span>
-        <div className={`flex flex-col flex-1`}>
-          <h4 className="text-xl font-semibold truncate">{title}</h4>
-          <p className="text-lg font-medium line-clamp-2">{budget}</p>
-          <p className="text-sm font-medium leading-relaxed line-clamp-2">{cleanedDescription}</p>
-        </div>
-        <Image
-          alt={`thumbnail`}
-          src={image}
-          width={100}
-          height={100}
-          className="rounded-xl object-cover shrink-0 w-[100px] h-[100px]"
-          decoding="async"
-          loading={id < 4 ? "lazy" : "eager"}
-        />
-      </div>
-    </article>
-  );
+  )
 }
 
 function BackToFormButton() {
-  const [hovered, setHovered] = useState<boolean>(false)
+  const [hovered, setHovered] = useState(false)
   const router = useRouter()
-
   return (
     <button
       onMouseEnter={() => setHovered(true)}
@@ -257,7 +61,7 @@ function BackToFormButton() {
     >
       <Image
         alt="back"
-        src={hovered ? "/arrow-right.svg" : "/arrow-right.svg"}
+        src={hovered ? '/arrow-right.svg' : '/arrow-right.svg'}
         width={25}
         height={25}
         className="rotate-180 bg-black rounded-3xl px-2 py-2 w-fit h-fit"
@@ -266,99 +70,215 @@ function BackToFormButton() {
   )
 }
 
-//TODO: fix the title and image
-export default function PanelPage({ params }: { params: Promise<{ slug: string }> }) {
-  const [enable, setEnable] = useState<boolean>(true);
-  const [removed, setRemoved] = useState<Set<string>>(new Set());
-  const [selected, setSelected] = useState<ThumbnailCardProps | null>(null);
-  const [data,setData] = useState<any>(null);
+// ── Activity card ─────────────────────────────────────────────────────────────
 
+interface ActivityCardProps {
+  activity: ActivityFull
+  isActive: boolean
+  cardRef: (el: HTMLElement | null) => void
+  onClick: () => void
+  onRemove: () => void
+}
+
+function ActivityCard({ activity, isActive, cardRef, onClick, onRemove }: ActivityCardProps) {
+  return (
+    <article
+      ref={cardRef}
+      onClick={onClick}
+      className={`
+        flex gap-3 w-full p-3 cursor-pointer border-b border-gray-100
+        hover:bg-[#f5f5f5] transition-colors
+        ${isActive ? 'bg-[#FFF3E0]' : 'bg-white'}
+      `}
+    >
+      {/* Number badge */}
+      <div
+        className="shrink-0 flex items-center justify-center rounded-full text-white font-bold text-sm"
+        style={{
+          width: 30,
+          height: 30,
+          background: isActive ? '#E64A19' : '#FF7043',
+          fontSize: 12,
+          marginTop: 2,
+        }}
+      >
+        {activity.globalIndex}
+      </div>
+
+      {/* Text content */}
+      <div className="flex flex-col flex-1 min-w-0 gap-0.5">
+        <h4 className="text-sm font-semibold text-[#212121] truncate leading-tight">
+          {activity.name}
+        </h4>
+        <p className="text-xs font-semibold text-[#FF7043]">
+          ${activity.estimated_cost.toLocaleString()}
+        </p>
+        <p className="text-xs text-[#616161] leading-relaxed line-clamp-2">
+          {activity.description}
+        </p>
+      </div>
+
+      {/* Thumbnail + remove */}
+      <div className="flex flex-col items-end gap-1 shrink-0">
+        <button
+          onClick={e => { e.stopPropagation(); onRemove() }}
+          className="cursor-pointer opacity-50 hover:opacity-100 transition-opacity"
+          aria-label="Remove activity"
+        >
+          <Image alt="remove" src="/close.svg" width={14} height={14} />
+        </button>
+        {activity.image_url && (
+          <Image
+            alt={activity.name}
+            src={activity.image_url}
+            width={80}
+            height={80}
+            className="rounded-lg object-cover w-[80px] h-[80px]"
+            decoding="async"
+          />
+        )}
+      </div>
+    </article>
+  )
+}
+
+// ── Detail panel (shown when a card is active) ────────────────────────────────
+
+function DetailPanel({ activity, onClose }: { activity: ActivityFull; onClose: () => void }) {
+  return (
+    <aside
+      className="absolute top-4 bg-white rounded-2xl w-96 shadow-xl overflow-hidden flex flex-col"
+      style={{ left: 'calc(350px + 1.5rem)', maxHeight: '80vh' }}
+    >
+      <div className="relative w-full h-52">
+        {activity.image_url ? (
+          <Image
+            alt={activity.name}
+            src={activity.image_url}
+            fill
+            className="object-cover"
+            decoding="async"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-200" />
+        )}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 cursor-pointer bg-white rounded-full p-1 shadow"
+        >
+          <Image alt="close" src="/close.svg" width={16} height={16} />
+        </button>
+        {/* Number badge overlay */}
+        <div
+          className="absolute bottom-3 left-3 flex items-center justify-center rounded-full text-white font-bold shadow"
+          style={{ width: 32, height: 32, background: '#E64A19', fontSize: 13 }}
+        >
+          {activity.globalIndex}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 p-4 overflow-y-auto custom-scroll">
+        <div>
+          <h4 className="text-xl font-semibold text-[#212121]">{activity.name}</h4>
+          <p className="text-sm font-semibold text-[#FF7043] mt-0.5">
+            ${activity.estimated_cost.toLocaleString()}
+          </p>
+        </div>
+        <p className="text-sm text-[#424242] leading-relaxed">{activity.description}</p>
+      </div>
+    </aside>
+  )
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
+export default function PanelPage() {
+  const [enable, setEnable] = useState(true)
+  const { activities, removeActivity, activeActivity, setActiveActivity } = useItinerary()
+
+  const cardRefs = useRef<(HTMLElement | null)[]>([])
+
+  // Scroll to card when map pin is clicked
   useEffect(() => {
-    const storedData = sessionStorage.getItem('itineraryData');
-    if (storedData) {
-      setData(JSON.parse(storedData));
+    if (!activeActivity) return
+    const idx = activities.findIndex(a => a.globalIndex === activeActivity.globalIndex)
+    if (idx >= 0) {
+      cardRefs.current[idx]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }
-  }, []);
+  }, [activeActivity, activities])
 
-  const budget = useMemo(() => {
-    const cost = (data?.days ?? [])
-      .filter((dest) => !removed.has((dest as any).day))
-      .reduce((sum: number, day: any) => {
-        const dayCost = Number(day.cost) || 0; 
-        return sum + dayCost;
-      }, 0);
+  const totalCost = useMemo(
+    () => activities.reduce((sum, a) => sum + (a.estimated_cost ?? 0), 0),
+    [activities]
+  )
 
-    const strCost = cost.toString();
-    let result = ""
-    let count = 0
-    for (let i = strCost.length - 1; i>=0; i--){
-      count++;
-      result = strCost[i] + result;
+  const activeActivityFull = activeActivity
+    ? activities.find(a => a.globalIndex === activeActivity.globalIndex) ?? null
+    : null
 
-      if (count % 3 == 0 && i != 0){
-        result = "," + result
-      }
+  const handleCardClick = (activity: ActivityFull) => {
+    if (activeActivity?.globalIndex === activity.globalIndex) {
+      setActiveActivity(null)
+    } else {
+      setActiveActivity({ globalIndex: activity.globalIndex, lat: activity.lat, lng: activity.lng })
     }
-
-    return "$" + result
-  }, [data, removed]);
-
-  const removeSelected = (id: string) => {
-    setRemoved(prev => new Set(prev).add(id));
-    if (selected?.id === id) setSelected(null);
-  };
+  }
 
   return (
     <PanelContext value={{ enable, setEnable }}>
-      <SelectedContext value={{ selected, setSelected, removeSelected }}>
+      {!enable && (
+        <div className="absolute top-4 left-4 flex flex-col gap-1">
+          <BackToFormButton />
+          <OpenButton />
+        </div>
+      )}
 
-        {!enable && (
-          <div className="absolute top-4 left-4 flex flex-col gap-1">
-            <BackToFormButton/>
-            <OpenButton />
-          </div>
-        )}
-
-        {enable && (
-          <>
+      {enable && (
+        <>
           <div className="absolute top-4 left-4">
             <BackToFormButton />
           </div>
-          <main className="h-[80vh] absolute bg-white rounded-2xl w-[350px] flex flex-col top-15 left-4">
-            <header className="flex justify-between p-4 border-b border-gray-400">
-              <h3 className="text-xl font-medium">Your vacation</h3>
+
+          <main className="absolute bg-white rounded-2xl w-[350px] flex flex-col top-15 left-4"
+            style={{ height: '80vh' }}
+          >
+            <header className="flex justify-between items-center p-4 border-b border-gray-200">
+              <h3 className="text-base font-semibold text-[#212121]">Your Itinerary</h3>
               <CloseButton />
             </header>
 
-            <div className="flex flex-col overflow-y-auto overflow-x-hidden flex-1 custom-scroll">
-              {data?.days
-                .filter((day: any) => !removed.has(day.day))
-                .map((day, index) => {
-                  index = index + 1
-                  return (
-                    <ThumbnailCard
-                      key={day.day}
-                      title={day.destination}
-                      order={String(index)}
-                      id={Number(day.day)}
-                      budget={`$${day.cost.toLocaleString()}`}
-                      description={day.activities}
-                      image={day.image_url}
-                    />
-                  );
-                })}
+            <div className="flex flex-col overflow-y-auto flex-1 custom-scroll">
+              {activities.length === 0 ? (
+                <p className="text-sm text-gray-400 p-4 text-center">No activities yet.</p>
+              ) : (
+                activities.map((activity, idx) => (
+                  <ActivityCard
+                    key={`${activity.dayIndex}-${activity.activityIndex}`}
+                    activity={activity}
+                    isActive={activeActivity?.globalIndex === activity.globalIndex}
+                    cardRef={el => { cardRefs.current[idx] = el }}
+                    onClick={() => handleCardClick(activity)}
+                    onRemove={() => removeActivity(activity.dayIndex, activity.activityIndex)}
+                  />
+                ))
+              )}
             </div>
 
-            <footer className="flex justify-end p-4 border-t border-gray-400">
-              <p className="text-sm font-semibold text-[#006064]">Total Budget: {budget}</p>
+            <footer className="flex justify-end p-3 border-t border-gray-200">
+              <p className="text-sm font-semibold text-[#006064]">
+                Total: ${totalCost.toLocaleString()}
+              </p>
             </footer>
           </main>
-          </>
-        )}
+        </>
+      )}
 
-        {selected && <DescriptionCard />}
-
-      </SelectedContext>
+      {activeActivityFull && enable && (
+        <DetailPanel
+          activity={activeActivityFull}
+          onClose={() => setActiveActivity(null)}
+        />
+      )}
     </PanelContext>
-  );
+  )
 }

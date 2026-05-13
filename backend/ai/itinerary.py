@@ -26,6 +26,13 @@ class AIDestination(BaseModel):
     lat: Optional[float] = Field(None, description="Latitude")
     lng: Optional[float] = Field(None, description="Longitude")
 
+class AIActivity(BaseModel):
+    name: str = Field(..., description="Short activity name")
+    description: str = Field(..., description="1-2 sentence description of the activity")
+    estimated_cost: int = Field(..., description="Estimated cost in USD as an integer")
+    lat: float = Field(..., description="Latitude of the activity location")
+    lng: float = Field(..., description="Longitude of the activity location")
+
 class AIDay(BaseModel):
     day: int = Field(..., description="Day number")
     origin: str = Field(..., description="Specific starting location name")
@@ -35,7 +42,7 @@ class AIDay(BaseModel):
     destination_lat: Optional[float] = Field(None, description="Destination latitude")
     destination_lng: Optional[float] = Field(None, description="Destination longitude")
     image_query: str = Field(..., description="Specific landmark or activity name for image search")
-    activities: List[str] = Field(..., description="List of detailed activities")
+    activities: List[AIActivity] = Field(..., description="List of 3-5 structured activities with coordinates")
     cost: int = Field(..., description="Specific integer amount for the day")
 
 class AISummary(BaseModel):
@@ -69,7 +76,8 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
         "{\n"
         "  \"destinations\": [{\"name\": \"...\", \"description\": \"...\", \"estimated_price\": 0, \"necessities\": \"...\", \"lat\": 0.0, \"lng\": 0.0}],\n"
         "  \"days\": [\n"
-        "    {\"day\": 1, \"origin\": \"Specific location in destination\", \"origin_lat\": 0.0, \"origin_lng\": 0.0, \"destination\": \"Specific attraction in destination\", \"destination_lat\": 0.0, \"destination_lng\": 0.0, \"image_query\": \"...\", \"activities\": [\"...\"], \"cost\": 0}\n"
+        "    {\"day\": 1, \"origin\": \"Specific location in destination\", \"origin_lat\": 0.0, \"origin_lng\": 0.0, \"destination\": \"Specific attraction in destination\", \"destination_lat\": 0.0, \"destination_lng\": 0.0, \"image_query\": \"...\", "
+        "\"activities\": [{\"name\": \"Activity Name\", \"description\": \"1-2 sentence description.\", \"estimated_cost\": 0, \"lat\": 0.0, \"lng\": 0.0}], \"cost\": 0}\n"
         "  ],\n"
         "  \"summary\": {\"total_cost\": 0, \"budget_fit\": \"Yes/No\"}\n"
         "}\n"
@@ -77,9 +85,11 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
         "1. FOCUS all activities and locations EXCLUSIVELY on the destination(s) (e.g., if flying London to Paris, only show Paris attractions).\n"
         "2. 'destinations' list: exactly 5 unique attractions/places within the destination(s).\n"
         "3. 'days' list: exactly " + str(days) + " entries. Each day must show a specific route within the destination city.\n"
-        "4. 'summary' object: MUST be a top-level key.\n"
-        "5. Coordinates and costs are required and must be numeric.\n"
-        "6. Output NO text other than the JSON object."
+        "4. Each day's 'activities' must be an array of 3-5 objects with name, description (1-2 sentences), estimated_cost (integer), lat, lng.\n"
+        "5. All coordinates must be real, accurate GPS coordinates for the actual named locations.\n"
+        "6. 'summary' object: MUST be a top-level key.\n"
+        "7. Costs and coordinates are required and must be numeric.\n"
+        "8. Output NO text other than the JSON object."
     )
 
     # 2. AI Call
@@ -97,6 +107,8 @@ def generate_itinerary_service(paths: List[List[Any]], budget: int, days: int) -
     for day in result.get("days", []):
         query = day.get("image_query") or day.get("destination") or "travel"
         day["image_url"] = _get_image_url(query)
+        for activity in day.get("activities", []):
+            activity["image_url"] = _get_image_url(activity.get("name", "travel"))
         
     return result
 
